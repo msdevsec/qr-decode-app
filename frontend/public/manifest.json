@@ -1,0 +1,15 @@
+{
+  "name": "QR Decode AI",
+  "short_name": "QR Decode",
+  "icons": [
+    {
+      "src": "/images/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
