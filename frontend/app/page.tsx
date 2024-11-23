@@ -51,7 +51,7 @@ export default function Home() {
             📱 Stuck with QR code while scrolling on social medias with your phone?
           </h2>
           <p className="text-lg text-black mb-6">
-            Can't scan QR codes with your phone? We've made it super easy! 
+            Can&apos;t scan QR codes with your phone? We&apos;ve made it super easy! 
           </p>
           
           <div className="space-y-4 max-w-2xl mx-auto text-center text-black">
@@ -68,14 +68,10 @@ export default function Home() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-4 justify-center mb-12">
-          <button className="bg-blue-500 text-white px-6 py-3 rounded-lg 
-                          hover:bg-blue-600 transition-colors">
+        <div className="flex justify-center mb-12">
+          <button className="bg-red-600 text-white px-12 py-4 rounded-lg text-lg font-semibold
+                          hover:bg-red-700 transition-colors transform hover:scale-105">
             Scan Now
-          </button>
-          <button className="bg-green-500 text-white px-6 py-3 rounded-lg 
-                          hover:bg-green-600 transition-colors">
-            Generate QR
           </button>
         </div>
       </div>
@@ -99,7 +95,7 @@ export default function Home() {
             <p className="text-gray-500">Drag and drop your QR code image here</p>
             </div>
             <p className="text-sm text-gray-500 italic">
-              *Built with the most used and secure Google's Zxing library.
+              *Built with the most used and secure Google&apos;s Zxing library.
             </p>
           </div>
         </div>
@@ -111,8 +107,8 @@ export default function Home() {
             {/* This will show decoded data */}
             <p className="text-gray-500">Decoded content will appear here...</p>
           </div>
-          <button className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg
-                           hover:bg-blue-600 transition-colors">
+          <button className="w-full bg-red-600 text-white px-4 py-2 rounded-lg
+                           hover:bg-red-700 transition-colors transform hover:scale-105">
             Copy Decoded Content
           </button>
         </div>
@@ -122,7 +118,7 @@ export default function Home() {
       <div className="mt-16 mb-8">
         <h2 className="text-2xl font-semibold mb-2">Webcam QR code scanner</h2>
         <p className="text-gray-600 mb-6">
-          Click "Open camera" & point the QR toward it to scan it and reveal it's content.
+          Click &quot;Open camera&quot; & point the QR toward it to scan it and reveal its content.
         </p>
       </div>
 
@@ -138,8 +134,8 @@ export default function Home() {
             <div className="bg-gray-50 p-8 rounded-lg mb-4 min-h-[300px] flex items-center justify-center">
               <p className="text-gray-500">Make sure to allow camera access!</p>
             </div>
-            <button className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg
-                             hover:bg-blue-600 transition-colors">
+            <button className="w-full bg-red-600 text-white px-4 py-2 rounded-lg
+                             hover:bg-red-700 transition-colors transform hover:scale-105">
               Enable Camera Access
             </button>
           </div>
@@ -153,8 +149,8 @@ export default function Home() {
           <div className="bg-gray-50 p-4 rounded-lg min-h-[300px] mb-4 flex items-center justify-center">
             <p className="text-gray-500">Scan a QR code to view the results here.</p>
           </div>
-          <button className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg
-                           hover:bg-blue-600 transition-colors">
+          <button className="w-full bg-red-600 text-white px-4 py-2 rounded-lg
+                           hover:bg-red-700 transition-colors transform hover:scale-105">
             Copy Decoded Content
           </button>
         </div>
@@ -229,7 +225,7 @@ export default function Home() {
 
       {/* FAQ Section - Static Version */}
       <div className="mt-16 mb-12">
-        <h2 className="text-2xl font-semibold mb-6">Scan QR code FAQ's</h2>
+        <h2 className="text-2xl font-semibold mb-6">Scan QR code FAQ&apos;s</h2>
         <div className="space-y-4">
           {/* Static FAQ items */}
           <div className="border border-gray-200 rounded-lg px-6 py-4">
@@ -278,7 +274,7 @@ export default function Home() {
               servers. Your data and privacy is our top priority.
             </p>
             <p>
-              Built with Cosmo Wolfe's javascript port of Google's ZXing library.
+              Built with Cosmo Wolfe&apos;s javascript port of Google&apos;s ZXing library.
             </p>
           </div>
         </div>
@@ -314,7 +310,7 @@ export default function Home() {
           <h3 className="text-lg font-semibold">Data Privacy</h3>
           <div className="text-gray-600 text-sm space-y-2">
             <p>
-              At QRDECODE.AI, we take the privacy and security of our users' data 
+              At QRDECODE.AI, we take the privacy and security of our users&apos; data 
               very seriously.
             </p>
             <p>
@@ -346,10 +342,7 @@ export default function Home() {
             <a href="#" className="hover:text-blue-600 transition-colors">Contact</a>
           </div>
         </div>
-</div>
-
-
-</main>
-);
+      </div>
+    </main>
+  );
 }
-
