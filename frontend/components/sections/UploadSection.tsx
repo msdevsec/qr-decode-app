@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import Button from '../ui/Button';
 import { useToast } from '../../context/ToastContext';
+import ShareButtons from '../ui/ShareButtons';
 
 
 export default function UploadSection() {
@@ -257,29 +258,31 @@ export default function UploadSection() {
         </div>
 
         <div className="border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">Scanned Data</h3>
-          <div className="bg-gray-50 p-4 rounded-lg min-h-[200px] mb-4">
-            {decodedData ? (
-              <div className="space-y-2">
-                <p className="text-sm text-gray-500">Type: {qrType}</p>
-                <p className="text-gray-800 break-all">{decodedData}</p>
-              </div>
-            ) : (
-              <p className="text-gray-500">Decoded content will appear here after you upload photo or /screenshot of your QR code.</p>
-            )}
-          </div>
-          <Button 
+  <h3 className="text-lg font-semibold mb-4">Scanned Data</h3>
+  <div className="bg-gray-50 p-4 rounded-lg min-h-[300px] mb-4">
+    {decodedData ? (
+      <div className="space-y-2">
+        <p className="text-sm text-gray-500">Type: {qrType}</p>
+        <p className="text-gray-800 break-all">{decodedData}</p>
+      </div>
+    ) : (
+      <p className="text-gray-500">Decoded content will appear here after uploading photo or screenshot of your QR code.</p>
+    )}
+  </div>
+  <Button 
     className="w-full"
     onClick={handleCopy}
     disabled={!decodedData}
   >
     Copy Decoded Content
   </Button>
-  {showPasteHint && (
-  <p className="text-green-500 text-sm mt-2 text-center">
-    Use CTRL + V to paste your decoded content anywhere!
-  </p>
-)}
+  
+  {decodedData && (
+    <div className="mt-4">
+      <p className="text-sm text-green-500 mb-2 text-center">Share it via social medias or email:</p>
+      <ShareButtons content={decodedData} />
+    </div>
+  )}
 </div>
       </div>
     </>

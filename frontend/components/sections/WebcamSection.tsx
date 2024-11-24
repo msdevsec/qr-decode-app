@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { BrowserMultiFormatReader, Result } from '@zxing/library';
 import Button from '../ui/Button';
 import { useToast } from '../../context/ToastContext';
+import ShareButtons from '../ui/ShareButtons';
+
 
 
 
@@ -216,17 +218,23 @@ export default function WebcamSection() {
         </div>
 
         <div className="border border-gray-300 rounded-lg p-6">
-  <h3 className="text-lg font-semibold mb-4">
+        <h3 className="text-lg font-semibold mb-4">
     <span role="img" aria-label="barcode">🔍</span> Scanned Data
   </h3>
   <div className="bg-gray-50 p-4 rounded-lg min-h-[300px] mb-4">
     {decodedData ? (
       <div className="space-y-2">
         <p className="text-sm text-gray-500">Type: {decodedData.type}</p>
-        <p className="text-gray-800 break-all">{decodedData.content}</p>
+        <div>
+          <p className="text-gray-800 break-all bg-white p-3 rounded border border-gray-200">
+            {decodedData.content}
+          </p>
+        </div>
       </div>
     ) : (
-      <p className="text-gray-500">Point your camera at a QR code to scan it</p>
+      <div className="h-full flex items-center justify-center">
+        <p className="text-gray-500">Point your camera at a QR code to scan it, decoded content will automatically appear here.</p>
+      </div>
     )}
   </div>
   <Button 
@@ -236,10 +244,11 @@ export default function WebcamSection() {
   >
     Copy Decoded Content
   </Button>
-  {showPasteHint && (
-  <p className="text-green-500 text-sm mt-2 text-center">
-    Use CTRL + V to paste your decoded content anywhere!
-  </p>
+  {decodedData && (
+  <div className="mt-4">
+    <p className="text-sm text-green-500 mb-2 text-center">Share it via social medias or email:</p>
+    <ShareButtons content={decodedData.content} />
+  </div>
 )}
 </div>
       </div>
