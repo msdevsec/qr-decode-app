@@ -1,91 +1,81 @@
+'use client';
+import Link from 'next/link';
+
 export default function Footer() {
   return (
-    <>
-      {/* Footer Section */}
-      <footer className="mt-16 grid grid-cols-1 md:grid-cols-4 gap-12 border-t border-gray-200 pt-12 pb-8">
-        {/* About Column */}
-        <div className="flex flex-col space-y-4">
-          <h3 className="text-lg font-semibold">About QRDECODE.AI</h3>
-          <div className="text-gray-600 text-sm space-y-2">
-            <p>
-              QRDECODE.AI is a <strong>QR code scanner </strong> online.
-              It can scan QR codes from images and through any webcam. Use it online 
-              without downloading any app.
+    <footer className="border-t border-gray-800 mt-16 bg-black">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* About Section */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4 text-white">About QRDecode.AI</h3>
+            <p className="text-gray-400">
+              An open-source QR code scanner with advanced features. Built with security and ease of use in mind.
             </p>
-            <p>
-              The QRDECODE.AI web app scans QR codes locally without uploading them to our 
-              servers. Your data and privacy is our top priority.
-            </p>
-            <p>
-              Built with Cosmo Wolfe's javascript port of Google's ZXing library.
-            </p>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4 text-white">Quick Links</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/" className="text-gray-400 hover:text-white transition-colors">
+                  QR Scanner
+                </Link>
+              </li>
+              <li>
+                <Link href="/premium" className="text-gray-400 hover:text-white transition-colors">
+                  Premium Features
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="text-gray-400 hover:text-white transition-colors">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
+                  Contact
+                </Link>
+              </li>
+              <li>
+                <a 
+                  href="https://github.com/msdevsec/qr-decode-app" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  GitHub Repository
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contact Info */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4 text-white">Contact</h3>
+            <ul className="space-y-2">
+              <li>
+                <a 
+                  href="mailto:msdevsec.services@gmail.com" 
+                  className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+                >
+                  <span>📧</span>
+                  msdevsec.services@gmail.com
+                </a>
+              </li>
+              <li className="text-gray-400">
+                For business inquiries and premium features
+              </li>
+            </ul>
           </div>
         </div>
 
-        {/* More Tools Column */}
-        <div className="flex flex-col space-y-4">
-          <h3 className="text-lg font-semibold">More Tools</h3>
-          <ul className="text-gray-600 text-sm space-y-2">
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span>Coming soon...</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* Contact Column */}
-        <div className="flex flex-col space-y-4">
-          <h3 className="text-lg font-semibold">Contact</h3>
-          <ul className="text-gray-600 text-sm space-y-2">
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span>msdevsec.services@gmail.com</span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-2">•</span>
-              <span>support@qrdecode.ai</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* Privacy Column */}
-        <div className="flex flex-col space-y-4">
-          <h3 className="text-lg font-semibold">Data Privacy</h3>
-          <div className="text-gray-600 text-sm space-y-2">
-            <p>
-              At QRDECODE.AI, we take the privacy and security of our users' data 
-              very seriously.
-            </p>
-            <p>
-              Our web app scans QR codes locally without uploading any data to our 
-              servers, ensuring that your information stays private.
-            </p>
-            <p>
-              Additionally, all data is encrypted to provide an additional layer of 
-              security.
-            </p>
-          </div>
-        </div>
-      </footer>
-
-      {/* Copyright Bar */}
-      <div className="border-t border-gray-200 mt-8">
-        <div className="flex flex-col md:flex-row justify-between items-center py-6">
-          {/* Copyright Text */}
-          <div className="text-sm text-gray-600 mb-4 md:mb-0">
-            Copyright © QRDECODE.AI 2024
-          </div>
-
-          {/* Footer Links */}
-          <div className="text-sm text-gray-600 space-x-4">
-            <a href="#" className="hover:text-blue-600 transition-colors">Privacy</a>
-            <span>·</span>
-            <a href="#" className="hover:text-blue-600 transition-colors">Terms</a>
-            <span>·</span>
-            <a href="#" className="hover:text-blue-600 transition-colors">Contact</a>
-          </div>
+        {/* Copyright */}
+        <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
+          <p>© 2024 QRDecode.AI. Open source version.</p>
         </div>
       </div>
-    </>
+    </footer>
   );
 }

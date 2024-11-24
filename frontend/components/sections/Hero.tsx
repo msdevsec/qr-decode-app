@@ -1,6 +1,18 @@
 'use client';
 import Button from '../ui/Button';
 
+const scrollToUpload = () => {
+  const element = document.getElementById('upload-section');
+  if (element) {
+    element.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'start'
+    });
+  } else {
+    console.log('Upload section not found');
+  }
+};
+
 export default function Hero() {
   return (
     <div className="text-center mb-12">
@@ -35,7 +47,7 @@ export default function Hero() {
 
       {/* Action Button */}
       <div className="flex justify-center mb-12">
-        <Button>
+        <Button onClick={scrollToUpload}>
           Scan Now
         </Button>
       </div>

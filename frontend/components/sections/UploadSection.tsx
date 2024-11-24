@@ -179,7 +179,7 @@ export default function UploadSection() {
   };
 
   return (
-    <>
+    <section id="upload-section">
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-2">Scan QR code from image</h2>
         <ScanCounter scansUsed={scansUsed} totalScans={5} />
@@ -284,6 +284,6 @@ export default function UploadSection() {
         resetTime={resetTime}
         onClose={() => setShowLimitModal(false)}
       />
-    </>
+    </section>
   );
 }
