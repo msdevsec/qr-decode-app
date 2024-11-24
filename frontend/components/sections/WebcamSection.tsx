@@ -3,12 +3,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { BrowserMultiFormatReader, Result } from '@zxing/library';
 import Button from '../ui/Button';
-import { useToast } from '../../context/ToastContext';
 import ShareButtons from '../ui/ShareButtons';
-
-
-
-
+import { useToast } from '../../context/ToastContext';
+import { useRateLimit } from '../../context/RateLimitContext';
+import LimitReachedModal from '../ui/LimitReachedModal';
+import ScanCounter from '../ui/ScanCounter';
 
 interface DecodedResult {
   type: string;
@@ -16,8 +15,6 @@ interface DecodedResult {
 }
 
 export default function WebcamSection() {
-  const { showToast } = useToast();
-  const [showPasteHint, setShowPasteHint] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -26,6 +23,9 @@ export default function WebcamSection() {
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+  const { showToast } = useToast();
+  const { scansUsed, remainingScans, resetTime, addScan, canScan } = useRateLimit();
+  const [showLimitModal, setShowLimitModal] = useState(false);
 
   useEffect(() => {
     readerRef.current = new BrowserMultiFormatReader();
@@ -39,29 +39,13 @@ export default function WebcamSection() {
 
   const determineQRType = (result: Result): string => {
     const text = result.getText();
-    
-    // URL
     if (text.match(/^(http|https):\/\//i)) return 'URL';
-    
-    // Email
     if (text.match(/^mailto:/i)) return 'Email';
-    
-    // Phone
     if (text.match(/^tel:/i)) return 'Phone';
-    
-    // WiFi
     if (text.startsWith('WIFI:')) return 'WiFi Network';
-    
-    // vCard
     if (text.startsWith('BEGIN:VCARD')) return 'Contact Card';
-    
-    // Calendar Event
     if (text.startsWith('BEGIN:VEVENT')) return 'Calendar Event';
-    
-    // SMS
     if (text.match(/^sms:/i)) return 'SMS';
-    
-    // Default to Text
     return 'Text';
   };
 
@@ -69,10 +53,8 @@ export default function WebcamSection() {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -92,6 +74,11 @@ export default function WebcamSection() {
   }, []);
 
   const startCamera = async () => {
+    if (!canScan) {
+      setShowLimitModal(true);
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     setIsQRDetected(false);
@@ -135,6 +122,11 @@ export default function WebcamSection() {
       (result) => {
         if (result) {
           const type = determineQRType(result);
+          const success = addScan();
+          if (!success) {
+            setShowLimitModal(true);
+            return;
+          }
           setDecodedData({
             type,
             content: result.getText()
@@ -150,7 +142,7 @@ export default function WebcamSection() {
       console.error('QR scanning error:', errorMessage);
       setError('Failed to start QR scanning');
     });
-  }, [stopCamera]);
+  }, [stopCamera, addScan]);
 
   const handleCopy = async () => {
     if (decodedData) {
@@ -175,6 +167,7 @@ export default function WebcamSection() {
     <>
       <div className="mt-16 mb-8">
         <h2 className="text-2xl font-semibold mb-2">Webcam QR code scanner</h2>
+        <ScanCounter scansUsed={scansUsed} totalScans={5} />
         <p className="text-gray-600 mb-6">
           Click &quot;Enable Camera&quot; & point the QR toward it to scan it and reveal its content.
         </p>
@@ -208,7 +201,7 @@ export default function WebcamSection() {
               <p className="text-red-500 text-sm mb-4">{error}</p>
             )}
             <Button 
-              className="w-full"
+              className="w-full mt-4"
               onClick={isQRDetected ? startCamera : isCameraActive ? stopCamera : startCamera}
               disabled={isLoading}
             >
@@ -217,41 +210,47 @@ export default function WebcamSection() {
           </div>
         </div>
 
-        <div className="border border-gray-300 rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-4">
-    <span role="img" aria-label="barcode">🔍</span> Scanned Data
-  </h3>
-  <div className="bg-gray-50 p-4 rounded-lg min-h-[300px] mb-4">
-    {decodedData ? (
-      <div className="space-y-2">
-        <p className="text-sm text-gray-500">Type: {decodedData.type}</p>
-        <div>
-          <p className="text-gray-800 break-all bg-white p-3 rounded border border-gray-200">
-            {decodedData.content}
-          </p>
+        <div className="border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">
+            <span role="img" aria-label="barcode">🔍</span> Scanned Data
+          </h3>
+          <div className="bg-gray-50 p-4 rounded-lg min-h-[300px] mb-4">
+            {decodedData ? (
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500">Type: {decodedData.type}</p>
+                <div>
+                  <p className="text-gray-800 break-all bg-white p-3 rounded border border-gray-200">
+                    {decodedData.content}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-gray-500">Point your camera at a QR code to scan it</p>
+              </div>
+            )}
+          </div>
+          <Button 
+            className="w-full"
+            onClick={handleCopy}
+            disabled={!decodedData}
+          >
+            Copy Decoded Content
+          </Button>
+          {decodedData && (
+            <div className="mt-4">
+              <p className="text-sm text-gray-500 mb-2 text-center">Share:</p>
+              <ShareButtons content={decodedData.content} />
+            </div>
+          )}
         </div>
       </div>
-    ) : (
-      <div className="h-full flex items-center justify-center">
-        <p className="text-gray-500">Point your camera at a QR code to scan it, decoded content will automatically appear here.</p>
-      </div>
-    )}
-  </div>
-  <Button 
-    className="w-full"
-    onClick={handleCopy}
-    disabled={!decodedData}
-  >
-    Copy Decoded Content
-  </Button>
-  {decodedData && (
-  <div className="mt-4">
-    <p className="text-sm text-green-500 mb-2 text-center">Share it via social medias or email:</p>
-    <ShareButtons content={decodedData.content} />
-  </div>
-)}
-</div>
-      </div>
+
+      <LimitReachedModal 
+        isOpen={showLimitModal}
+        resetTime={resetTime}
+        onClose={() => setShowLimitModal(false)}
+      />
     </>
   );
 }

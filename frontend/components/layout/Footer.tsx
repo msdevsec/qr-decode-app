@@ -39,7 +39,7 @@ export default function Footer() {
           <ul className="text-gray-600 text-sm space-y-2">
             <li className="flex items-start">
               <span className="mr-2">•</span>
-              <span>150 Argent Court, Grays, RM17 6TA, UNITED KINGDOM</span>
+              <span>msdevsec.services@gmail.com</span>
             </li>
             <li className="flex items-start">
               <span className="mr-2">•</span>

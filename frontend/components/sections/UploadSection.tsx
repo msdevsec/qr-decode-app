@@ -3,13 +3,13 @@
 import { useState, useCallback, useRef } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import Button from '../ui/Button';
-import { useToast } from '../../context/ToastContext';
 import ShareButtons from '../ui/ShareButtons';
-
+import { useToast } from '../../context/ToastContext';
+import { useRateLimit } from '../../context/RateLimitContext';
+import LimitReachedModal from '../ui/LimitReachedModal';
+import ScanCounter from '../ui/ScanCounter';
 
 export default function UploadSection() {
-  const { showToast } = useToast();
-  const [showPasteHint, setShowPasteHint] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -17,6 +17,9 @@ export default function UploadSection() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [qrType, setQrType] = useState<string>('');
+  const { showToast } = useToast();
+  const { scansUsed, remainingScans, resetTime, addScan, canScan } = useRateLimit();
+  const [showLimitModal, setShowLimitModal] = useState(false);
 
   // Handle file drop
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -24,22 +27,33 @@ export default function UploadSection() {
     setIsDragging(false);
     setError('');
 
+    if (!canScan) {
+      setShowLimitModal(true);
+      return;
+    }
+
     const droppedFile = e.dataTransfer.files[0];
     if (validateFile(droppedFile)) {
       setFile(droppedFile);
       processFile(droppedFile);
     }
-  }, []);
+  }, [canScan]);
 
   // Handle file selection
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setError('');
+
+    if (!canScan) {
+      setShowLimitModal(true);
+      return;
+    }
+
     const selectedFile = e.target.files?.[0];
     if (selectedFile && validateFile(selectedFile)) {
       setFile(selectedFile);
       processFile(selectedFile);
     }
-  }, []);
+  }, [canScan]);
 
   // Validate file type and size
   const validateFile = (file: File): boolean => {
@@ -59,39 +73,14 @@ export default function UploadSection() {
 
   // Detect QR code type
   const detectQRType = (data: string): string => {
-    // URL
-    if (/^https?:\/\//i.test(data)) {
-      return 'URL';
-    }
-    // WiFi
-    if (data.startsWith('WIFI:')) {
-      return 'WiFi Network';
-    }
-    // vCard
-    if (data.startsWith('BEGIN:VCARD')) {
-      return 'Contact Card';
-    }
-    // Email
-    if (data.startsWith('mailto:')) {
-      return 'Email Address';
-    }
-    // Phone
-    if (data.startsWith('tel:')) {
-      return 'Phone Number';
-    }
-    // SMS
-    if (data.startsWith('sms:')) {
-      return 'SMS';
-    }
-    // Geographic location
-    if (data.startsWith('geo:')) {
-      return 'Location';
-    }
-    // Calendar event
-    if (data.startsWith('BEGIN:VEVENT')) {
-      return 'Calendar Event';
-    }
-    // Plain text
+    if (/^https?:\/\//i.test(data)) return 'URL';
+    if (data.startsWith('WIFI:')) return 'WiFi Network';
+    if (data.startsWith('BEGIN:VCARD')) return 'Contact Card';
+    if (data.startsWith('mailto:')) return 'Email Address';
+    if (data.startsWith('tel:')) return 'Phone Number';
+    if (data.startsWith('sms:')) return 'SMS';
+    if (data.startsWith('geo:')) return 'Location';
+    if (data.startsWith('BEGIN:VEVENT')) return 'Calendar Event';
     return 'Text';
   };
 
@@ -109,11 +98,8 @@ export default function UploadSection() {
             throw new Error('Could not create canvas context');
           }
 
-          // Set canvas size to image size
           canvas.width = img.width;
           canvas.height = img.height;
-          
-          // Draw image to canvas
           context.drawImage(img, 0, 0);
           
           try {
@@ -139,10 +125,20 @@ export default function UploadSection() {
 
   // Process the file
   const processFile = async (file: File) => {
+    if (!canScan) {
+      setShowLimitModal(true);
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     try {
       const data = await decodeQR(file);
+      const success = addScan();
+      if (!success) {
+        setShowLimitModal(true);
+        return;
+      }
       setDecodedData(data);
       setQrType(detectQRType(data));
     } catch (err) {
@@ -182,17 +178,11 @@ export default function UploadSection() {
     }
   };
 
-  const handleReset = () => {
-    setFile(null);
-    setDecodedData('');
-    setQrType('');
-    setError('');
-  };
-
   return (
     <>
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-2">Scan QR code from image</h2>
+        <ScanCounter scansUsed={scansUsed} totalScans={5} />
         <p className="text-gray-600 mb-6">
           Simply upload an image or take a photo/screenshot of a QR code to reveal its content.
         </p>
@@ -225,8 +215,12 @@ export default function UploadSection() {
                       />
                     </div>
                     <p className="text-gray-500 mb-4">{file.name}</p>
-                    <Button onClick={handleReset}>
-                      Upload another QR Code
+                    <Button onClick={() => {
+                      setFile(null);
+                      setDecodedData('');
+                      setQrType('');
+                    }}>
+                      Upload another QR
                     </Button>
                   </div>
                 ) : (
@@ -258,33 +252,38 @@ export default function UploadSection() {
         </div>
 
         <div className="border border-gray-200 rounded-lg p-6">
-  <h3 className="text-lg font-semibold mb-4">Scanned Data</h3>
-  <div className="bg-gray-50 p-4 rounded-lg min-h-[300px] mb-4">
-    {decodedData ? (
-      <div className="space-y-2">
-        <p className="text-sm text-gray-500">Type: {qrType}</p>
-        <p className="text-gray-800 break-all">{decodedData}</p>
+          <h3 className="text-lg font-semibold mb-4">Scanned Data</h3>
+          <div className="bg-gray-50 p-4 rounded-lg min-h-[300px] mb-4">
+            {decodedData ? (
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500">Type: {qrType}</p>
+                <p className="text-gray-800 break-all">{decodedData}</p>
+              </div>
+            ) : (
+              <p className="text-gray-500">Decoded content will appear here...</p>
+            )}
+          </div>
+          <Button 
+            className="w-full mt-4"
+            onClick={handleCopy}
+            disabled={!decodedData}
+          >
+            Copy Decoded Content
+          </Button>
+          {decodedData && (
+            <div className="mt-4">
+              <p className="text-sm text-gray-500 mb-2 text-center">Share:</p>
+              <ShareButtons content={decodedData} />
+            </div>
+          )}
+        </div>
       </div>
-    ) : (
-      <p className="text-gray-500">Decoded content will appear here after uploading photo or screenshot of your QR code.</p>
-    )}
-  </div>
-  <Button 
-    className="w-full"
-    onClick={handleCopy}
-    disabled={!decodedData}
-  >
-    Copy Decoded Content
-  </Button>
-  
-  {decodedData && (
-    <div className="mt-4">
-      <p className="text-sm text-green-500 mb-2 text-center">Share it via social medias or email:</p>
-      <ShareButtons content={decodedData} />
-    </div>
-  )}
-</div>
-      </div>
+
+      <LimitReachedModal 
+        isOpen={showLimitModal}
+        resetTime={resetTime}
+        onClose={() => setShowLimitModal(false)}
+      />
     </>
   );
 }

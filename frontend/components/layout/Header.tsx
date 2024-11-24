@@ -17,19 +17,27 @@ export default function Header() {
           <span className="text-xl font-bold">QRDECODE.AI</span>
         </div>
 
+      
+
         {/* Navigation Links */}
         <div className="flex items-center space-x-8">
           <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">
             QR Scanner
           </a>
           <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">
+            Premium
+          </a>
+          <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">
             About Us
           </a>
+          
           <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors ">
             Contact
           </a>
         </div>
+        
       </div>
+      <div>This is Free Version created for GitHub Community, Premium features are not available. To access Premium Commercial Version please contact me at msdevsec.service@gmail.com</div>
     </nav>
   );
 }
