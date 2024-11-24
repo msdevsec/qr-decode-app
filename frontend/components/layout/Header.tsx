@@ -22,9 +22,6 @@ export default function Header() {
           <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">
             QR Scanner
           </a>
-          <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors font-semibold">
-            Premium
-          </a>
           <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">
             About Us
           </a>

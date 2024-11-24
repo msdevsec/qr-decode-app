@@ -3,6 +3,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { BrowserMultiFormatReader, Result } from '@zxing/library';
 import Button from '../ui/Button';
+import { useToast } from '../../context/ToastContext';
+
+
+
 
 interface DecodedResult {
   type: string;
@@ -10,6 +14,7 @@ interface DecodedResult {
 }
 
 export default function WebcamSection() {
+  const { showToast } = useToast();
   const [showPasteHint, setShowPasteHint] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -149,13 +154,11 @@ export default function WebcamSection() {
     if (decodedData) {
       try {
         await navigator.clipboard.writeText(decodedData.content);
-        setShowPasteHint(true);
-        // Hide the hint after 3 seconds
-        setTimeout(() => setShowPasteHint(false), 3000);
+        showToast('Content copied to clipboard!', 'success');
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error('Copy error:', errorMessage);
-        setError('Failed to copy to clipboard');
+        showToast('Failed to copy to clipboard', 'error');
       }
     }
   };

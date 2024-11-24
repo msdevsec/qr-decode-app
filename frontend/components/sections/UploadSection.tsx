@@ -3,8 +3,11 @@
 import { useState, useCallback, useRef } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import Button from '../ui/Button';
+import { useToast } from '../../context/ToastContext';
+
 
 export default function UploadSection() {
+  const { showToast } = useToast();
   const [showPasteHint, setShowPasteHint] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -171,10 +174,9 @@ export default function UploadSection() {
     if (decodedData) {
       try {
         await navigator.clipboard.writeText(decodedData);
-        setShowPasteHint(true);
-        setTimeout(() => setShowPasteHint(false), 3000);
+        showToast('Content copied to clipboard!', 'success');
       } catch (err) {
-        setError('Failed to copy to clipboard');
+        showToast('Failed to copy to clipboard', 'error');
       }
     }
   };
@@ -263,7 +265,7 @@ export default function UploadSection() {
                 <p className="text-gray-800 break-all">{decodedData}</p>
               </div>
             ) : (
-              <p className="text-gray-500">Decoded content will appear here after you upload photo or screenshot of your QR code.</p>
+              <p className="text-gray-500">Decoded content will appear here after you upload photo or /screenshot of your QR code.</p>
             )}
           </div>
           <Button 
