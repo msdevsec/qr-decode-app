@@ -231,7 +231,7 @@ export default function WebcamSection() {
             )}
           </div>
           <Button 
-            className="w-full"
+            className="w-full mt-4"
             onClick={handleCopy}
             disabled={!decodedData}
           >

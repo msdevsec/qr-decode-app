@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import Toast from '../components/ui/Toast';
 
 interface ToastContextType {
@@ -9,24 +9,54 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
+interface ToastState {
+  message: string;
+  type: 'success' | 'error';
+  isVisible: boolean;
+}
+
+const initialState: ToastState = {
+  message: '',
+  type: 'success',
+  isVisible: false
+};
+
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toast, setToast] = useState<{
-    message: string;
-    type: 'success' | 'error';
-  } | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [state, setState] = useState<ToastState>(initialState);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type });
+    setState({
+      message,
+      type,
+      isVisible: true
+    });
   };
+
+  const hideToast = () => {
+    setState(prev => ({
+      ...prev,
+      isVisible: false
+    }));
+  };
+
+  // Don't render toast until after client-side hydration
+  if (!mounted) {
+    return <>{children}</>;
+  }
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      {toast && (
+      {state.isVisible && (
         <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
+          message={state.message}
+          type={state.type}
+          onClose={hideToast}
         />
       )}
     </ToastContext.Provider>

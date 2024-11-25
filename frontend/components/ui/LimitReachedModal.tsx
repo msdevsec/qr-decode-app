@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import Button from './Button';
 import { useRouter } from 'next/navigation';
 
 interface LimitReachedModalProps {
   isOpen: boolean;
-  resetTime: number;
+  resetTime: number | null;
   onClose: () => void;
 }
 
@@ -14,22 +14,13 @@ export default function LimitReachedModal({ isOpen, resetTime, onClose }: LimitR
   const [timeLeft, setTimeLeft] = useState<string>('');
   const router = useRouter();
 
-  // Handle upgrade click
   const handleUpgradeClick = () => {
     onClose();
     router.push('/premium');
   };
 
-  // Handle escape key
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose();
-    }
-  }, [onClose]);
-
-  // Update timer
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !resetTime) return;
 
     const updateTimeLeft = () => {
       const now = Date.now();
@@ -47,39 +38,23 @@ export default function LimitReachedModal({ isOpen, resetTime, onClose }: LimitR
     };
 
     updateTimeLeft();
-    const interval = setInterval(updateTimeLeft, 1000); // Update every second
+    const interval = setInterval(updateTimeLeft, 1000);
 
-    // Add keyboard listener
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen, resetTime, onClose, handleKeyDown]);
-
-  // Handle click outside
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
+    return () => clearInterval(interval);
+  }, [isOpen, resetTime, onClose]);
 
   if (!isOpen) return null;
 
   return (
     <div 
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
-      onClick={handleBackdropClick}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
       aria-labelledby="modal-title"
       aria-modal="true"
     >
       <div 
-        className="bg-blue-900 rounded-lg p-6 sm:p-8 max-w-md w-full mx-auto shadow-2xl border border-blue-700 transform transition-all duration-300 scale-95 opacity-0 animate-in"
-        style={{
-          animation: 'modalIn 0.3s ease-out forwards',
-        }}
+        className="bg-blue-900 rounded-lg p-6 sm:p-8 max-w-md w-full mx-auto shadow-2xl border border-blue-700"
       >
         <h2 
           id="modal-title"
@@ -105,14 +80,16 @@ export default function LimitReachedModal({ isOpen, resetTime, onClose }: LimitR
             Upgrade to Premium for Unlimited Scans!
             <span aria-hidden="true">→</span>
           </a>
-          <div className="bg-blue-800 rounded-lg p-4">
-            <p className="text-gray-200">
-              Time until reset: 
-              <span className="font-mono font-bold text-white ml-2" aria-live="polite">
-                {timeLeft}
-              </span>
-            </p>
-          </div>
+          {resetTime && (
+            <div className="bg-blue-800 rounded-lg p-4">
+              <p className="text-gray-200">
+                Time until reset: 
+                <span className="font-mono font-bold text-white ml-2" aria-live="polite">
+                  {timeLeft}
+                </span>
+              </p>
+            </div>
+          )}
         </div>
         <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-4">
           <Button 
@@ -132,17 +109,3 @@ export default function LimitReachedModal({ isOpen, resetTime, onClose }: LimitR
     </div>
   );
 }
-
-// Add to your globals.css
-/*
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-*/

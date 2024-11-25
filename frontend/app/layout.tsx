@@ -1,17 +1,12 @@
-'use client';
-
-import { ToastProvider } from '../context/ToastContext';
-import { RateLimitProvider } from '../context/RateLimitContext';
-import { AuthProvider } from '../context/AuthContext';
-import Header from '../components/layout/Header';
-import Footer from '../components/layout/Footer';
+import RootLayout from '../components/layout/RootLayout';
 import { metadata } from './metadata';
 import './globals.css';
 
 // Export metadata for Next.js
 export { metadata };
 
-export default function RootLayout({
+// Root layout wrapper (server component)
+export default function Layout({
   children,
 }: {
   children: React.ReactNode;
@@ -19,19 +14,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-black min-h-screen flex flex-col">
-        <AuthProvider>
-          <ToastProvider>
-            <RateLimitProvider>
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow">
-                  {children}
-                </main>
-                <Footer />
-              </div>
-            </RateLimitProvider>
-          </ToastProvider>
-        </AuthProvider>
+        <RootLayout>
+          {children}
+        </RootLayout>
       </body>
     </html>
   );

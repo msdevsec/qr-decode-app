@@ -2,14 +2,12 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-// Define the shape of our user data
 interface User {
   id: string;
   name: string;
   email: string;
 }
 
-// Define what our context provides
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -18,101 +16,131 @@ interface AuthContextType {
   logout: () => Promise<void>;
 }
 
-// Create the context
+interface AuthState {
+  user: User | null;
+  isLoading: boolean;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Provider component
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+const STORAGE_KEY = 'qrdecode_auth_user';
 
-  // Check if user is logged in on mount
+// Initial state without any Date.now() or dynamic values
+const initialState: AuthState = {
+  user: null,
+  isLoading: true
+};
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  const [state, setState] = useState<AuthState>(initialState);
+
+  // Initialize auth state after mount
   useEffect(() => {
+    const checkAuth = () => {
+      try {
+        const savedUser = localStorage.getItem(STORAGE_KEY);
+        if (savedUser) {
+          setState({
+            user: JSON.parse(savedUser),
+            isLoading: false
+          });
+        } else {
+          setState({
+            user: null,
+            isLoading: false
+          });
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setState({
+          user: null,
+          isLoading: false
+        });
+      }
+      setMounted(true);
+    };
+
     checkAuth();
   }, []);
 
-  // Function to check authentication status
-  const checkAuth = async () => {
-    try {
-      // TODO: Add actual API call to verify session
-      // For now, check localStorage
-      const savedUser = localStorage.getItem('user');
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Login function
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
+    setState(prev => ({ ...prev, isLoading: true }));
     try {
-      // TODO: Add actual API call
-      // For now, simulate API call
-      const mockUser = {
+      // Mock login - replace with actual API call in commercial version
+      const mockUser: User = {
         id: '1',
         name: 'Test User',
-        email: email
+        email
       };
-      
-      // Save to localStorage
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      setUser(mockUser);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
+      setState({
+        user: mockUser,
+        isLoading: false
+      });
     } catch (error) {
-      console.error('Login failed:', error);
+      setState(prev => ({ ...prev, isLoading: false }));
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Register function
   const register = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
+    setState(prev => ({ ...prev, isLoading: true }));
     try {
-      // TODO: Add actual API call
-      // For now, simulate API call
-      const mockUser = {
+      // Mock registration - replace with actual API call in commercial version
+      const mockUser: User = {
         id: '1',
-        name: name,
-        email: email
+        name,
+        email
       };
-      
-      // Save to localStorage
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      setUser(mockUser);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
+      setState({
+        user: mockUser,
+        isLoading: false
+      });
     } catch (error) {
-      console.error('Registration failed:', error);
+      setState(prev => ({ ...prev, isLoading: false }));
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Logout function
   const logout = async () => {
     try {
-      // TODO: Add actual API call
-      localStorage.removeItem('user');
-      setUser(null);
+      localStorage.removeItem(STORAGE_KEY);
+      setState({
+        user: null,
+        isLoading: false
+      });
     } catch (error) {
       console.error('Logout failed:', error);
       throw error;
     }
   };
 
+  // Don't render children until after client-side hydration
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-gray-400">Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider 
+      value={{
+        user: state.user,
+        isLoading: state.isLoading,
+        login,
+        register,
+        logout
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Custom hook to use auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
