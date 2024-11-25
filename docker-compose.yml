@@ -1,10 +1,15 @@
+# docker-compose.yml
+# Full stack configuration for QRDecode.AI
+
 version: '3.8'
 
 services:
+  # Frontend Service (Next.js)
   frontend:
     build: 
       context: ./frontend
       dockerfile: Dockerfile
+      target: development
     ports:
       - "3000:3000"
     volumes:
@@ -12,13 +17,16 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
     depends_on:
       - backend
 
+  # Backend Service (Express/TypeScript)
   backend:
     build: 
       context: ./backend
       dockerfile: Dockerfile
+      target: development
     ports:
       - "4000:4000"
     volumes:
@@ -26,30 +34,53 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://user:password@postgres:5432/qrdecoder
+      - PORT=4000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-qrdecoder}
       - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key}
+      - RATE_LIMIT_WINDOW=43200
+      - RATE_LIMIT_MAX_REQUESTS=5
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
+  # PostgreSQL Database
   postgres:
-    image: postgres:latest
+    image: postgres:15-alpine
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: qrdecoder
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-qrdecoder}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-qrdecoder}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  # Redis for Session Storage and Rate Limiting
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  default:
+    driver: bridge

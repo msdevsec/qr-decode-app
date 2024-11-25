@@ -44,3 +44,45 @@ redis_data/
 # Backups
 backup.bat
 backups/
+
+# Additional Docker & Security
+nginx/ssl/*.pem
+nginx/ssl/*.key
+nginx/ssl/*.crt
+.docker/data/
+docker-compose.override.yml
+docker-compose.prod.yml
+
+# Cache and Temporary files
+.cache/
+.temp/
+*.tmp
+*.temp
+*.bak
+.eslintcache
+*.tsbuildinfo
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# PWA files
+**/public/sw.js
+**/public/workbox-*.js
+**/public/worker-*.js
+**/public/sw.js.map
+**/public/workbox-*.js.map
+**/public/worker-*.js.map
+
+# Local SSL certificates
+*.crt
+*.key
+*.csr
+*.pem
+
+# Logs
+logs/
+*.log
