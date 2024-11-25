@@ -76,10 +76,6 @@ export default function PremiumSection() {
                     </li>
                     <li className="flex items-center">
                       <span className="text-blue-500 mr-2">•</span>
-                      Business API access
-                    </li>
-                    <li className="flex items-center">
-                      <span className="text-blue-500 mr-2">•</span>
                       Premium support
                     </li>
                   

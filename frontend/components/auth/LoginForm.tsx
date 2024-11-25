@@ -1,4 +1,3 @@
-// frontend/components/auth/LoginForm.tsx
 'use client';
 
 import { useState } from 'react';
@@ -8,7 +7,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
-  // Move hooks inside the component
   const { login } = useAuth();
   const router = useRouter();
   
@@ -24,7 +22,7 @@ export default function LoginForm() {
 
     try {
       await login(email, password);
-      router.push('/dashboard');  // Redirect to dashboard after login
+      router.push('/dashboard');
     } catch (err) {
       setError('Failed to login. Please try again.');
     } finally {
@@ -33,12 +31,20 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form 
+      onSubmit={handleSubmit} 
+      className="space-y-6"
+      noValidate
+    >
+      {/* Email Field */}
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-200">
+        <label 
+          htmlFor="email" 
+          className="block text-sm font-medium text-gray-200"
+        >
           Email address
         </label>
-        <div className="mt-1">
+        <div className="mt-1 relative">
           <input
             id="email"
             name="email"
@@ -47,16 +53,31 @@ export default function LoginForm() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="appearance-none block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="
+              appearance-none block w-full
+              px-3 py-2
+              border border-gray-700 rounded-lg
+              shadow-sm
+              bg-gray-800 text-white
+              placeholder-gray-500
+              focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
+              transition-colors duration-200
+            "
+            placeholder="you@example.com"
+            aria-describedby={error ? "email-error" : undefined}
           />
         </div>
       </div>
 
+      {/* Password Field */}
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-200">
+        <label 
+          htmlFor="password" 
+          className="block text-sm font-medium text-gray-200"
+        >
           Password
         </label>
-        <div className="mt-1">
+        <div className="mt-1 relative">
           <input
             id="password"
             name="password"
@@ -65,43 +86,67 @@ export default function LoginForm() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="appearance-none block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="
+              appearance-none block w-full
+              px-3 py-2
+              border border-gray-700 rounded-lg
+              shadow-sm
+              bg-gray-800 text-white
+              placeholder-gray-500
+              focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
+              transition-colors duration-200
+            "
+            placeholder="••••••••"
+            aria-describedby={error ? "password-error" : undefined}
           />
         </div>
       </div>
 
+      {/* Error Message */}
       {error && (
-        <div className="text-red-500 text-sm">
-          {error}
+        <div 
+          className="text-red-500 text-sm bg-red-500/10 p-3 rounded-lg"
+          role="alert"
+        >
+          <div className="flex items-center space-x-2">
+            <span className="text-lg">⚠️</span>
+            <span>{error}</span>
+          </div>
         </div>
       )}
 
+      {/* Submit Button */}
       <div>
         <Button
           type="submit"
-          className="w-full flex justify-center py-2 px-4"
+          className="w-full"
           disabled={isLoading}
+          isLoading={isLoading}
+          size="lg"
         >
           {isLoading ? 'Signing in...' : 'Sign in'}
         </Button>
       </div>
 
-      <div className="text-sm text-center">
-        <Link 
-          href="/auth/register" 
-          className="text-blue-500 hover:text-blue-400"
-        >
-          Don&apos;t have an account? Sign up
-        </Link>
-        <div className="text-sm text-center space-y-2">
+      {/* Links */}
+      <div className="space-y-4">
+        <div className="text-sm text-center">
+          <Link 
+            href="/auth/register" 
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            Don&apos;t have an account? <span className="text-red-500">Sign up</span>
+          </Link>
+        </div>
 
-  <Link 
-    href="/auth/forgot-password" 
-    className="text-blue-500 hover:text-blue-400 block"
-  >
-    Forgot your password?
-  </Link>
-</div>
+        <div className="text-sm text-center">
+          <Link 
+            href="/auth/forgot-password" 
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            Forgot your password?
+          </Link>
+        </div>
       </div>
     </form>
   );
