@@ -166,20 +166,20 @@ export default function WebcamSection() {
   return (
     <>
       <div className="mt-16 mb-8">
-        <h2 className="text-2xl font-semibold mb-2">Webcam QR code scanner</h2>
-        <ScanCounter scansUsed={scansUsed} totalScans={5} />
-        <p className="text-gray-600 mb-6">
+        <h2 className="text-2xl font-semibold mb-2 text-white">Webcam QR code scanner</h2>
+        <ScanCounter scansUsed={scansUsed} totalScans={5} resetTime={resetTime} />
+        <p className="text-gray-400 mb-6">
           Click &quot;Enable Camera&quot; & point the QR toward it to scan it and reveal its content.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="border border-gray-200 rounded-lg p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+        <div className="border border-gray-800 rounded-lg p-4 sm:p-6 bg-gray-900">
           <div className="text-center">
-            <h3 className="text-lg font-semibold mb-4">
+            <h3 className="text-lg font-semibold mb-4 text-white">
               <span role="img" aria-label="webcam">📷</span> Webcam
             </h3>
-            <div className="bg-gray-50 rounded-lg mb-4 min-h-[300px] flex items-center justify-center overflow-hidden relative">
+            <div className="bg-gray-800 rounded-lg mb-4 min-h-[300px] flex items-center justify-center overflow-hidden relative">
               <video
                 ref={videoRef}
                 className={`w-full h-full object-cover ${isQRDetected ? 'hidden' : 'block'}`}
@@ -192,7 +192,7 @@ export default function WebcamSection() {
                 className={`w-full h-full object-cover ${isQRDetected ? 'block' : 'hidden'}`}
               />
               {!isCameraActive && !isQRDetected && (
-                <p className="absolute inset-0 flex items-center justify-center text-gray-500">
+                <p className="absolute inset-0 flex items-center justify-center text-gray-400">
                   {isLoading ? 'Accessing camera...' : 'Make sure to allow camera access!'}
                 </p>
               )}
@@ -210,16 +210,16 @@ export default function WebcamSection() {
           </div>
         </div>
 
-        <div className="border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">
+        <div className="border border-gray-800 rounded-lg p-4 sm:p-6 bg-gray-900">
+          <h3 className="text-lg font-semibold mb-4 text-white">
             <span role="img" aria-label="barcode">🔍</span> Scanned Data
           </h3>
-          <div className="bg-gray-50 p-4 rounded-lg min-h-[300px] mb-4">
+          <div className="bg-gray-800 p-4 rounded-lg min-h-[200px] sm:min-h-[300px] mb-4">
             {decodedData ? (
               <div className="space-y-2">
-                <p className="text-sm text-gray-500">Type: {decodedData.type}</p>
+                <p className="text-sm text-gray-400">Type: {decodedData.type}</p>
                 <div>
-                  <p className="text-gray-800 break-all bg-white p-3 rounded border border-gray-200">
+                  <p className="text-gray-200 break-all bg-gray-900 p-3 rounded border border-gray-700">
                     {decodedData.content}
                   </p>
                 </div>
@@ -239,7 +239,7 @@ export default function WebcamSection() {
           </Button>
           {decodedData && (
             <div className="mt-4">
-              <p className="text-sm text-gray-500 mb-2 text-center">Share:</p>
+              <p className="text-sm text-gray-400 mb-2 text-center">Share:</p>
               <ShareButtons content={decodedData.content} />
             </div>
           )}

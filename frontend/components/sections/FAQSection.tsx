@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface FAQItem {
   question: string;
@@ -48,6 +48,21 @@ const faqItems: FAQItem[] = [
 export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
+  // Handle URL hash for direct links to FAQs
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      const id = parseInt(hash.replace('#faq-', ''));
+      if (!isNaN(id) && id >= 0 && id < faqItems.length) {
+        setOpenIndex(id);
+        document.getElementById(`faq-${id}`)?.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }
+  }, []);
+
   const toggleFAQ = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
@@ -58,23 +73,39 @@ export default function FAQSection() {
       <div className="space-y-4">
         {faqItems.map((item, index) => (
           <div 
-            key={index} 
-            className="group border border-gray-200 rounded-lg px-6 py-4 cursor-pointer hover:bg-yellow-50 transition-colors"
+            key={index}
+            id={`faq-${index}`}
+            className="group border border-gray-200 rounded-lg px-4 sm:px-6 py-3 sm:py-4 cursor-pointer hover:bg-yellow-50 transition-colors"
             onClick={() => toggleFAQ(index)}
+            role="button"
+            tabIndex={0}
+            aria-expanded={openIndex === index}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleFAQ(index);
+              }
+            }}
           >
             <div className="flex justify-between items-center">
-            <h3 className="font-semibold group-hover:text-black transition-colors">{item.question}</h3>
-
-              <span className={`transform transition-transform duration-200 ${openIndex === index ? 'rotate-180' : ''}`}>
+              <h3 className="text-lg sm:text-xl font-semibold group-hover:text-black transition-colors">
+                {item.question}
+              </h3>
+              <span 
+                className={`transform transition-transform duration-300 ease-in-out ${
+                  openIndex === index ? 'rotate-180' : ''
+                }`}
+                aria-hidden="true"
+              >
                 ▼
               </span>
             </div>
             <div 
-              className={`mt-2 text-gray-600 overflow-hidden transition-all duration-200 ease-in-out ${
+              className={`mt-2 text-gray-600 overflow-hidden transition-all duration-300 ease-in-out ${
                 openIndex === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
               }`}
             >
-              <p className="py-2">{item.answer}</p>
+              <p className="py-2 text-base">{item.answer}</p>
             </div>
           </div>
         ))}

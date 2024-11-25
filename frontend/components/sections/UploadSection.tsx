@@ -181,29 +181,37 @@ export default function UploadSection() {
   return (
     <section id="upload-section">
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-2">Scan QR code from image</h2>
-        <ScanCounter scansUsed={scansUsed} totalScans={5} />
-        <p className="text-gray-600 mb-6">
+        <h2 className="text-2xl font-semibold mb-2 text-white">Scan QR code from image</h2>
+        <ScanCounter 
+          scansUsed={scansUsed} 
+          totalScans={5} 
+          resetTime={resetTime}
+        />
+        <p className="text-gray-400 mb-6">
           Simply upload an image or take a photo/screenshot of a QR code to reveal its content.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+        {/* Upload Area */}
         <div 
-          className={`border-2 border-dashed rounded-lg p-6 transition-colors
-            ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+          className={`border-2 border-dashed rounded-lg p-4 sm:p-6 transition-colors
+            ${isDragging 
+              ? 'border-blue-500 bg-blue-900/10' 
+              : 'border-gray-700 hover:border-gray-600'
+            }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
         >
           <div className="text-center">
-            <h3 className="text-lg font-semibold mb-4">Select QR code</h3>
-            <div className="bg-gray-50 p-8 rounded-lg mb-4">
+            <h3 className="text-lg font-semibold mb-4 text-white">Select QR code</h3>
+            <div className="bg-gray-900 p-4 sm:p-8 rounded-lg mb-4 border border-gray-800">
               <div className="flex flex-col items-center">
                 {isLoading ? (
                   <div className="text-center">
                     <div className="animate-spin text-4xl mb-4">⚡</div>
-                    <p className="text-gray-500">Processing QR code...</p>
+                    <p className="text-gray-400">Processing QR code...</p>
                   </div>
                 ) : file ? (
                   <div className="text-center">
@@ -214,7 +222,7 @@ export default function UploadSection() {
                         className="max-w-[200px] mx-auto rounded"
                       />
                     </div>
-                    <p className="text-gray-500 mb-4">{file.name}</p>
+                    <p className="text-gray-400 mb-4">{file.name}</p>
                     <Button onClick={() => {
                       setFile(null);
                       setDecodedData('');
@@ -226,8 +234,8 @@ export default function UploadSection() {
                 ) : (
                   <>
                     <span className="text-4xl mb-4">⬆️</span>
-                    <p className="text-gray-500 mb-2">Drag and drop your QR code image here</p>
-                    <p className="text-sm text-gray-400 mb-4">or</p>
+                    <p className="text-gray-300 mb-2">Drag and drop your QR code image here</p>
+                    <p className="text-sm text-gray-500 mb-4">or</p>
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -251,13 +259,14 @@ export default function UploadSection() {
           </div>
         </div>
 
-        <div className="border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">Scanned Data</h3>
-          <div className="bg-gray-50 p-4 rounded-lg min-h-[300px] mb-4">
+        {/* Results Area */}
+        <div className="border border-gray-800 rounded-lg p-4 sm:p-6 bg-gray-900">
+          <h3 className="text-lg font-semibold mb-4 text-white">Scanned Data</h3>
+          <div className="bg-gray-800 p-4 rounded-lg min-h-[200px] sm:min-h-[300px] mb-4">
             {decodedData ? (
               <div className="space-y-2">
-                <p className="text-sm text-gray-500">Type: {qrType}</p>
-                <p className="text-gray-800 break-all">{decodedData}</p>
+                <p className="text-sm text-gray-400">Type: {qrType}</p>
+                <p className="text-gray-200 break-all">{decodedData}</p>
               </div>
             ) : (
               <p className="text-gray-500">Decoded content will appear here...</p>
@@ -272,7 +281,7 @@ export default function UploadSection() {
           </Button>
           {decodedData && (
             <div className="mt-4">
-              <p className="text-sm text-gray-500 mb-2 text-center">Share:</p>
+              <p className="text-sm text-gray-400 mb-2 text-center">Share:</p>
               <ShareButtons content={decodedData} />
             </div>
           )}
