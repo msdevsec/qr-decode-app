@@ -38,7 +38,7 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-qrdecoder}?connect_timeout=300
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET:-your-secret-key}
-      - RATE_LIMIT_WINDOW=43200
+      - RATE_LIMIT_WINDOW=86400
       - RATE_LIMIT_MAX_REQUESTS=5
     depends_on:
       postgres:
