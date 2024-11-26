@@ -3,7 +3,7 @@
 A modern, open-source QR code scanning and management application built with Next.js, Express, and TypeScript. Perfect for developers who want to learn full-stack development or need a starting point for their own QR code projects.
 
 <div align="center">
-  <img src="frontend/public/images/decoded" alt="QR Code Scanning Demo" width="800"/>
+  <img src="frontend/public/images/decoded.png" alt="QR Code Scanning Demo" width="800"/>
 </div>
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
