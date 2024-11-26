@@ -235,5 +235,26 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Star the repository if you find it useful
 - Fork it if you want to contribute
 
+## 💾 Database Persistence
+
+The application uses Docker volumes to ensure data persistence. Here's what you need to know:
+
+### Data Storage
+- All database data is stored in the `postgres_data` Docker volume
+- Data persists across container restarts and rebuilds
+- Data remains intact when using `docker-compose down`
+
+### When Data is Lost
+Data is only lost in these specific scenarios:
+1. Using `docker-compose down -v` (which removes volumes)
+2. Manually deleting the postgres_data volume
+3. Running `docker volume rm` on the postgres volume
+
+### Backup Recommendations
+To prevent data loss, regularly:
+1. Use `docker exec` to create database backups
+2. Store backups outside the Docker environment
+3. Avoid using `-v` flag with `docker-compose down` unless necessary
+
 ---
 Built with ❤️ by [msdevsec](https://github.com/msdevsec)
