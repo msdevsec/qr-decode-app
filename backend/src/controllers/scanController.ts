@@ -1,78 +1,137 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { redisClient } from '../lib/redis';
-import { AuthenticatedRequest } from '../types/custom';
+import { 
+  BadRequestError, 
+  UnauthorizedError, 
+  ValidationError,
+  asyncHandler,
+  AuthenticatedRequest
+} from '../utils/errors';
+
+// Request body types
+interface CreateScanBody {
+  content: string;
+  type: string;
+}
+
+const VALID_SCAN_TYPES = ['URL', 'TEXT', 'EMAIL', 'PHONE', 'WIFI', 'VCARD'] as const;
+type ScanType = typeof VALID_SCAN_TYPES[number];
+
+// Helper function to ensure request is authenticated
+const ensureAuthenticated = (req: AuthenticatedRequest): number => {
+  if (!req.userId) {
+    throw new UnauthorizedError('Authentication required');
+  }
+  return req.userId;
+};
 
 export const scanController = {
-  // Create scan
-  createScan: async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    try {
-      const userId = req.userId;
-      const { content, type } = req.body;
+  // Create new scan
+  createScan: asyncHandler(async (req: Request, res: Response) => {
+    const userId = ensureAuthenticated(req as AuthenticatedRequest);
+    const { content, type } = req.body as CreateScanBody;
 
-      // Check rate limit
-      const scanCount = await redisClient.get(`scan_count:${userId}`);
-      if (scanCount && parseInt(scanCount) >= 5) {
-        res.status(429).json({ error: 'Rate limit exceeded' });
-        return;
-      }
-
-      // Create scan
-      const scan = await prisma.scan.create({
-        data: {
-          content,
-          type,
-          user: { connect: { id: userId } }
-        }
-      });
-
-      // Update rate limit
-      await redisClient.incr(`scan_count:${userId}`);
-      await redisClient.expire(`scan_count:${userId}`, 43200);
-
-      res.status(201).json(scan);
-    } catch (error) {
-      console.error('Create scan error:', error);
-      res.status(500).json({ error: 'Server error' });
+    // Validate input
+    if (!content || !type) {
+      throw new ValidationError('Content and type are required');
     }
-  },
+
+    // Validate scan type
+    if (!VALID_SCAN_TYPES.includes(type.toUpperCase() as ScanType)) {
+      throw new ValidationError('Invalid scan type', {
+        validTypes: VALID_SCAN_TYPES
+      });
+    }
+
+    // Create scan
+    const scan = await prisma.scan.create({
+      data: {
+        content,
+        type: type.toUpperCase(),
+        user_id: userId
+      }
+    });
+
+    res.status(201).json(scan);
+  }),
 
   // Get scan history
-  getScanHistory: async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    try {
-      const userId = req.userId;
+  getScanHistory: asyncHandler(async (req: Request, res: Response) => {
+    const userId = ensureAuthenticated(req as AuthenticatedRequest);
 
-      const scans = await prisma.scan.findMany({
+    // Get pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get scans with pagination
+    const [scans, total] = await Promise.all([
+      prisma.scan.findMany({
         where: { user_id: userId },
-        orderBy: { created_at: 'desc' }
-      });
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          content: true,
+          type: true,
+          created_at: true
+        }
+      }),
+      prisma.scan.count({
+        where: { user_id: userId }
+      })
+    ]);
 
-      res.json(scans);
-    } catch (error) {
-      console.error('Get history error:', error);
-      res.status(500).json({ error: 'Server error' });
-    }
-  },
+    res.json({
+      scans,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  }),
 
   // Get scan statistics
-  getStats: async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    try {
-      const userId = req.userId;
-      
-      const totalScans = await prisma.scan.count({
+  getStats: asyncHandler(async (req: Request, res: Response) => {
+    const userId = ensureAuthenticated(req as AuthenticatedRequest);
+
+    // Get statistics
+    const [totalScans, scansByType, currentScans] = await Promise.all([
+      // Get total scans
+      prisma.scan.count({
         where: { user_id: userId }
-      });
+      }),
+      // Get scans grouped by type
+      prisma.$queryRaw<Array<{ type: string; count: number }>>`
+        SELECT type, COUNT(*) as count
+        FROM "Scan"
+        WHERE user_id = ${userId}
+        GROUP BY type
+      `,
+      // Get current period scans
+      redisClient.get(`rate_limit:${userId}`)
+    ]);
 
-      const scanCount = await redisClient.get(`scan_count:${userId}`);
-      const remainingScans = 5 - (scanCount ? parseInt(scanCount) : 0);
+    // Calculate remaining scans
+    const RATE_LIMIT = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '5');
+    const scansToday = currentScans ? parseInt(currentScans) : 0;
+    const remaining = Math.max(0, RATE_LIMIT - scansToday);
 
-      res.json({
-        totalScans,
-        remainingToday: remainingScans
-      });
-    } catch (error) {
-      console.error('Get stats error:', error);
-      res.status(500).json({ error: 'Server error' });
-    }
-  }
+    // Format scan types
+    const scanTypes = scansByType.reduce((acc, curr) => ({
+      ...acc,
+      [curr.type]: Number(curr.count)
+    }), {} as Record<string, number>);
+
+    res.json({
+      totalScans,
+      scanTypes,
+      remainingToday: remaining,
+      rateLimit: RATE_LIMIT
+    });
+  })
 };

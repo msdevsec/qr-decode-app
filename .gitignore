@@ -86,3 +86,48 @@ next-env.d.ts
 # Logs
 logs/
 *.log
+
+# Additional entries
+# Prisma
+prisma/*.db
+.prisma/
+
+# Test coverage
+.nyc_output/
+coverage-e2e/
+
+# Build artifacts
+*.tgz
+*.tar.gz
+*.zip
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# dotenv environment variable files
+.env*.local
+.env.development
+.env.test
+.env.production
+.env.staging
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*

@@ -13,7 +13,7 @@ import { specs } from './docs/swagger';
 dotenv.config();
 
 // Create Express app
-const app = express();
+export const app = express();
 const port = process.env.PORT || 4000;
 
 // Middleware
@@ -39,26 +39,28 @@ app.get('/health', (req, res) => {
 // Error handling
 app.use(errorHandler);
 
-// Start server
-const startServer = async () => {
-  try {
-    // Test database connection
-    await prisma.$connect();
-    console.log('Connected to PostgreSQL');
+// Start server only if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  const startServer = async () => {
+    try {
+      // Test database connection
+      await prisma.$connect();
+      console.log('Connected to PostgreSQL');
 
-    // Test Redis connection
-    await redisClient.ping();
-    console.log('Connected to Redis');
+      // Test Redis connection
+      await redisClient.ping();
+      console.log('Connected to Redis');
 
-    // Start server
-    app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
-      console.log(`API Documentation available at http://localhost:${port}/api-docs`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
+      // Start server
+      app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+        console.log(`API Documentation available at http://localhost:${port}/api-docs`);
+      });
+    } catch (error) {
+      console.error('Failed to start server:', error);
+      process.exit(1);
+    }
+  };
 
-startServer();
+  startServer();
+}
