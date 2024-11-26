@@ -28,8 +28,8 @@ export default function RootLayout({
   }
 
   return (
-    <AuthProvider>
-      <ToastProvider>
+    <ToastProvider>
+      <AuthProvider>
         <RateLimitProvider>
           <div className="flex flex-col min-h-screen">
             <Header />
@@ -39,7 +39,7 @@ export default function RootLayout({
             <Footer />
           </div>
         </RateLimitProvider>
-      </ToastProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </ToastProvider>
   );
 }

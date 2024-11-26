@@ -6,8 +6,11 @@ import Button from '../ui/Button';
 import ShareButtons from '../ui/ShareButtons';
 import { useToast } from '../../context/ToastContext';
 import { useRateLimit } from '../../context/RateLimitContext';
+import { useAuth } from '../../context/AuthContext';
 import LimitReachedModal from '../ui/LimitReachedModal';
 import ScanCounter from '../ui/ScanCounter';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 interface DecodedResult {
   type: string;
@@ -24,7 +27,8 @@ export default function WebcamSection() {
   const [isLoading, setIsLoading] = useState(false);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const { showToast } = useToast();
-  const { scansUsed, remainingScans, resetTime, addScan, canScan } = useRateLimit();
+  const { scansUsed, resetTime, canScan, syncWithBackend } = useRateLimit();
+  const { getToken } = useAuth();
   const [showLimitModal, setShowLimitModal] = useState(false);
 
   useEffect(() => {
@@ -47,6 +51,31 @@ export default function WebcamSection() {
     if (text.startsWith('BEGIN:VEVENT')) return 'Calendar Event';
     if (text.match(/^sms:/i)) return 'SMS';
     return 'Text';
+  };
+
+  const createScan = async (content: string, type: string) => {
+    const token = getToken();
+    if (!token) {
+      throw new Error('Create free account to decode QR codes.');
+    }
+
+    const response = await fetch(`${API_URL}/api/scans`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ content, type })
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded');
+      }
+      throw new Error('Failed to create scan');
+    }
+
+    return response.json();
   };
 
   const captureFrame = () => {
@@ -119,22 +148,30 @@ export default function WebcamSection() {
     readerRef.current.decodeFromVideoDevice(
       null,
       videoRef.current,
-      (result) => {
+      async (result) => {
         if (result) {
           const type = determineQRType(result);
-          const success = addScan();
-          if (!success) {
-            setShowLimitModal(true);
-            return;
+          const content = result.getText();
+
+          try {
+            await createScan(content, type);
+            await syncWithBackend(); // Sync to get latest count
+            setDecodedData({
+              type,
+              content
+            });
+            captureFrame();
+            setIsQRDetected(true);
+            stopCamera();
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to process QR code';
+            setError(errorMessage);
+            if (errorMessage === 'Rate limit exceeded') {
+              setShowLimitModal(true);
+              await syncWithBackend(); // Sync to get latest count
+            }
+            setDecodedData(null);
           }
-          setDecodedData({
-            type,
-            content: result.getText()
-          });
-          
-          captureFrame();
-          setIsQRDetected(true);
-          stopCamera();
         }
       }
     ).catch((error: unknown) => {
@@ -142,7 +179,7 @@ export default function WebcamSection() {
       console.error('QR scanning error:', errorMessage);
       setError('Failed to start QR scanning');
     });
-  }, [stopCamera, addScan]);
+  }, [stopCamera, syncWithBackend]);
 
   const handleCopy = async () => {
     if (decodedData) {

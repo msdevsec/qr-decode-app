@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { ToastContext, ToastContextType } from './ToastContext';
 
 interface User {
   id: string;
@@ -14,6 +16,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  getToken: () => string | null;
 }
 
 interface AuthState {
@@ -23,9 +26,10 @@ interface AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'qrdecode_auth_user';
+const USER_STORAGE_KEY = 'qrdecode_auth_user';
+const TOKEN_STORAGE_KEY = 'qrdecode_auth_token';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-// Initial state without any Date.now() or dynamic values
 const initialState: AuthState = {
   user: null,
   isLoading: true
@@ -34,17 +38,60 @@ const initialState: AuthState = {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [state, setState] = useState<AuthState>(initialState);
+  const router = useRouter();
+  const toast = useContext<ToastContextType | undefined>(ToastContext);
 
-  // Initialize auth state after mount
+  const showToast = (message: string, type: 'success' | 'error') => {
+    if (toast) {
+      toast.showToast(message, type);
+    }
+  };
+
+  const handleUnauthorized = () => {
+    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    setState({
+      user: null,
+      isLoading: false
+    });
+    router.push('/auth/login');
+    showToast('Session expired. Please log in again.', 'error');
+  };
+
+  const verifyToken = async (token: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/verify`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        handleUnauthorized();
+        return false;
+      }
+
+      return true;
+    } catch {
+      handleUnauthorized();
+      return false;
+    }
+  };
+
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
-        const savedUser = localStorage.getItem(STORAGE_KEY);
-        if (savedUser) {
-          setState({
-            user: JSON.parse(savedUser),
-            isLoading: false
-          });
+        const savedUser = localStorage.getItem(USER_STORAGE_KEY);
+        const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+        
+        if (savedUser && token) {
+          const isValid = await verifyToken(token);
+          if (isValid) {
+            setState({
+              user: JSON.parse(savedUser),
+              isLoading: false
+            });
+          }
         } else {
           setState({
             user: null,
@@ -53,31 +100,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('Auth check failed:', error);
-        setState({
-          user: null,
-          isLoading: false
-        });
+        handleUnauthorized();
       }
       setMounted(true);
     };
 
     checkAuth();
-  }, []);
+
+    // Set up interval to periodically verify token
+    const interval = setInterval(() => {
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (token) {
+        verifyToken(token);
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [router]);
+
+  const getToken = () => {
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
+  };
 
   const login = async (email: string, password: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
     try {
-      // Mock login - replace with actual API call in commercial version
-      const mockUser: User = {
-        id: '1',
-        name: 'Test User',
-        email
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || 'Login failed');
+      }
+
+      const { user, token } = data;
+      
+      // Save user and token separately
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      
       setState({
-        user: mockUser,
+        user,
         isLoading: false
       });
+
+      showToast('Successfully logged in!', 'success');
     } catch (error) {
       setState(prev => ({ ...prev, isLoading: false }));
       throw error;
@@ -87,17 +160,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (name: string, email: string, password: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
     try {
-      // Mock registration - replace with actual API call in commercial version
-      const mockUser: User = {
-        id: '1',
-        name,
-        email
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
+      const response = await fetch(`${API_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = data.error || data.message || 'Registration failed';
+        throw new Error(errorMessage);
+      }
+
+      const { user, token } = data;
+      
+      // Save user and token separately
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      
       setState({
-        user: mockUser,
+        user,
         isLoading: false
       });
+
+      showToast('Successfully registered!', 'success');
     } catch (error) {
       setState(prev => ({ ...prev, isLoading: false }));
       throw error;
@@ -106,18 +195,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(USER_STORAGE_KEY);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
       setState({
         user: null,
         isLoading: false
       });
+      router.push('/auth/login');
+      showToast('Successfully logged out!', 'success');
     } catch (error) {
       console.error('Logout failed:', error);
       throw error;
     }
   };
 
-  // Don't render children until after client-side hydration
   if (!mounted) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -133,7 +224,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: state.isLoading,
         login,
         register,
-        logout
+        logout,
+        getToken
       }}
     >
       {children}

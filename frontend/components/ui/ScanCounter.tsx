@@ -50,16 +50,21 @@ export default function ScanCounter({ scansUsed, totalScans, resetTime }: ScanCo
         </span>
       </p>
       {remaining === 0 && resetTime && (
-        <div className="mt-1 space-y-1">
-          <Link 
-            href="/premium" 
-            className="text-xs text-blue-500 hover:text-blue-400 block"
-          >
-            Upgrade to Premium for unlimited scans
-          </Link>
-          <p className="text-xs text-gray-500">
-            Scan Limit reset in: <span className="font-mono">{timeLeft}</span>
-          </p>
+        <div className="mt-2 space-y-2">
+          <div className="bg-gray-800 rounded-lg p-2 inline-block">
+            <p className="text-gray-400 text-xs mb-1">Your limit will reset in:</p>
+            <p className="text-white font-mono text-base font-bold">
+              {timeLeft}
+            </p>
+          </div>
+          <div>
+            <Link 
+              href="/premium" 
+              className="text-yellow-400 hover:text-yellow-300 text-sm font-semibold hover:underline block"
+            >
+              Upgrade To Premium For Unlimited Scans →
+            </Link>
+          </div>
         </div>
       )}
     </div>

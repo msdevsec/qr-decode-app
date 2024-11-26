@@ -9,6 +9,8 @@ import {
 
 interface JwtPayload {
   userId: number;
+  iat?: number;
+  exp?: number;
 }
 
 export const auth = asyncHandler(async (
@@ -34,8 +36,14 @@ export const auth = asyncHandler(async (
     // Verify token
     const decoded = jwt.verify(
       token, 
-      process.env.JWT_SECRET || 'secret'
+      process.env.JWT_SECRET || 'qrdecode-super-secret-key-2024'
     ) as JwtPayload;
+
+    // Check token expiration
+    const now = Math.floor(Date.now() / 1000);
+    if (decoded.exp && decoded.exp < now) {
+      throw new UnauthorizedError('Token expired');
+    }
 
     // Verify user exists
     const user = await prisma.user.findUnique({

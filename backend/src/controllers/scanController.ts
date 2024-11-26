@@ -8,6 +8,7 @@ import {
   asyncHandler,
   AuthenticatedRequest
 } from '../utils/errors';
+import { getRateLimitKey, rateLimitConfig } from '../utils/rateLimit';
 
 // Request body types
 interface CreateScanBody {
@@ -100,7 +101,7 @@ export const scanController = {
     const userId = ensureAuthenticated(req as AuthenticatedRequest);
 
     // Get statistics
-    const [totalScans, scansByType, currentScans] = await Promise.all([
+    const [totalScans, scansByType, currentScans, ttl] = await Promise.all([
       // Get total scans
       prisma.scan.count({
         where: { user_id: userId }
@@ -113,13 +114,14 @@ export const scanController = {
         GROUP BY type
       `,
       // Get current period scans
-      redisClient.get(`rate_limit:${userId}`)
+      redisClient.get(getRateLimitKey(userId)),
+      // Get TTL for rate limit key
+      redisClient.ttl(getRateLimitKey(userId))
     ]);
 
     // Calculate remaining scans
-    const RATE_LIMIT = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '5');
     const scansToday = currentScans ? parseInt(currentScans) : 0;
-    const remaining = Math.max(0, RATE_LIMIT - scansToday);
+    const remaining = Math.max(0, rateLimitConfig.RATE_LIMIT - scansToday);
 
     // Format scan types
     const scanTypes = scansByType.reduce((acc, curr) => ({
@@ -131,7 +133,8 @@ export const scanController = {
       totalScans,
       scanTypes,
       remainingToday: remaining,
-      rateLimit: RATE_LIMIT
+      rateLimit: rateLimitConfig.RATE_LIMIT,
+      resetTime: ttl > 0 ? ttl : rateLimitConfig.WINDOW
     });
   })
 };

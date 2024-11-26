@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useAuth } from './AuthContext';
 
 interface RateLimitState {
   scansUsed: number;
@@ -11,16 +12,17 @@ interface RateLimitContextType {
   scansUsed: number;
   resetTime: number | null;
   remainingScans: number;
-  addScan: () => boolean;
+  addScan: () => Promise<boolean>;
   canScan: boolean;
+  syncWithBackend: () => Promise<void>;
 }
 
 const RateLimitContext = createContext<RateLimitContextType | undefined>(undefined);
 
 const DAILY_SCAN_LIMIT = 5;
-const STORAGE_KEY = 'qrdecode_rate_limit';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-// Initial state without Date.now()
+// Initial state
 const initialState: RateLimitState = {
   scansUsed: 0,
   resetTime: null
@@ -29,52 +31,59 @@ const initialState: RateLimitState = {
 export function RateLimitProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [state, setState] = useState<RateLimitState>(initialState);
+  const { getToken } = useAuth();
 
-  // Initialize state from localStorage after mount
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      // Only use stored state if reset time hasn't passed
-      if (parsed.resetTime && Date.now() < parsed.resetTime) {
-        setState(parsed);
-      } else {
-        setState(initialState);
+  // Sync with backend
+  const syncWithBackend = async () => {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_URL}/api/scans/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch rate limit info');
       }
+
+      const data = await response.json();
+      setState({
+        scansUsed: DAILY_SCAN_LIMIT - data.remainingToday,
+        resetTime: data.resetTime ? Date.now() + (data.resetTime * 1000) : null
+      });
+    } catch (error) {
+      console.error('Failed to sync rate limit:', error);
     }
+  };
+
+  // Initialize state from backend after mount
+  useEffect(() => {
+    syncWithBackend();
     setMounted(true);
   }, []);
 
-  // Save state to localStorage
+  // Sync with backend periodically
   useEffect(() => {
-    if (mounted) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
-  }, [state, mounted]);
+    if (!mounted) return;
 
-  const addScan = () => {
-    // If we have a reset time and it's passed
-    if (state.resetTime && Date.now() >= state.resetTime) {
-      setState({
-        scansUsed: 1,
-        resetTime: null
-      });
-      return true;
-    }
+    const interval = setInterval(syncWithBackend, 5000); // Sync every 5 seconds
+    return () => clearInterval(interval);
+  }, [mounted]);
+
+  const addScan = async () => {
+    // Always check with backend first
+    await syncWithBackend();
 
     // If we're at the limit
     if (state.scansUsed >= DAILY_SCAN_LIMIT) {
       return false;
     }
 
-    // Add the scan
-    const newScansUsed = state.scansUsed + 1;
-    setState({
-      scansUsed: newScansUsed,
-      // Only set reset time when hitting the limit
-      resetTime: newScansUsed === DAILY_SCAN_LIMIT ? 
-        Date.now() + (24 * 60 * 60 * 1000) : null
-    });
+    // Let the backend handle the actual increment
+    // We'll update our state in the next sync
     return true;
   };
 
@@ -93,6 +102,7 @@ export function RateLimitProvider({ children }: { children: ReactNode }) {
     remainingScans: DAILY_SCAN_LIMIT - state.scansUsed,
     addScan,
     canScan: state.scansUsed < DAILY_SCAN_LIMIT,
+    syncWithBackend
   };
 
   return (

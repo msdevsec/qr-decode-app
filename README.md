@@ -50,6 +50,8 @@ cp backend/.env.example backend/.env
 ```bash
 # Build and start all services
 docker-compose up -d
+# start Prisma and apply migration in docker
+docker-compose exec backend npx prisma migrate dev
 
 # The following services will be available:
 # - Frontend: http://localhost:3000

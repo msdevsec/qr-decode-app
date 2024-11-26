@@ -64,8 +64,10 @@ export default function RegisterForm() {
     try {
       await register(formData.name, formData.email, formData.password);
       router.push('/dashboard');
-    } catch (err) {
-      setError('Failed to register. Please try again.');
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      // Show the specific error message from the backend if available
+      setError(err?.message || err?.error || 'Failed to register. Please try again.');
     } finally {
       setIsLoading(false);
     }

@@ -9,6 +9,8 @@ const createRedisClient = (): RedisClient => {
     port: parseInt(process.env.REDIS_PORT || '6379'),
     password: process.env.REDIS_PASSWORD,
     maxRetriesPerRequest: 3,
+    enableOfflineQueue: true,
+    showFriendlyErrorStack: true,
     retryStrategy: (times: number): number | null => {
       const maxRetryDelay = 5000; // 5 seconds
       const minRetryDelay = 1000; // 1 second
@@ -49,6 +51,8 @@ const createRedisClient = (): RedisClient => {
   // Handle connection events
   client.on('connect', () => {
     console.log('Connected to Redis');
+    // Test Redis connection and persistence
+    testRedisConnection(client).catch(console.error);
   });
 
   client.on('ready', () => {
@@ -66,6 +70,23 @@ const createRedisClient = (): RedisClient => {
   client.on('reconnecting', (delay: number) => {
     console.log(`Redis reconnecting in ${delay}ms`);
   });
+
+  // Monitor Redis commands in development
+  if (process.env.NODE_ENV === 'development') {
+    client.monitor((err, monitorClient) => {
+      if (err) {
+        console.error('Redis monitor error:', err);
+        return;
+      }
+
+      if (monitorClient) {
+        console.log('Redis monitoring started');
+        monitorClient.on('monitor', (time, args) => {
+          console.log('Redis command:', args);
+        });
+      }
+    });
+  }
 
   // Handle cleanup on shutdown
   const cleanup = async () => {
@@ -97,6 +118,32 @@ const parseRedisUrl = (url: string): RedisOptions => {
     db: parseInt(parsedUrl.pathname?.slice(1) || '0'),
     tls: parsedUrl.protocol === 'rediss:' ? {} : undefined
   };
+};
+
+// Test Redis connection and persistence
+const testRedisConnection = async (client: RedisClient): Promise<void> => {
+  try {
+    // Test basic set/get
+    const testKey = 'test:connection';
+    await client.set(testKey, 'test');
+    const value = await client.get(testKey);
+    console.log('Redis test value:', value);
+
+    // Test expiry
+    await client.expire(testKey, 10);
+    const ttl = await client.ttl(testKey);
+    console.log('Redis test TTL:', ttl);
+
+    // Test persistence configuration
+    const config = await client.config('GET', 'appendonly');
+    console.log('Redis persistence config:', config);
+
+    // Clean up test key
+    await client.del(testKey);
+  } catch (error) {
+    console.error('Redis connection test failed:', error);
+    throw error;
+  }
 };
 
 // Export Redis client instance

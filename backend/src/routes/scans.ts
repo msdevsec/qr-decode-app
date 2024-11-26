@@ -15,7 +15,7 @@ router.use(auth as RequestHandler);
  *     tags:
  *       - Scans
  *     summary: Create a new scan
- *     description: Create a new QR code scan. Rate limited to 5 scans per 12 hours.
+ *     description: Create a new QR code scan. Rate limited to 5 scans per 24 hours.
  *     security:
  *       - BearerAuth: []
  *     requestBody:

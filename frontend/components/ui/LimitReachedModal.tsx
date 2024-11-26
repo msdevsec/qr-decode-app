@@ -58,48 +58,47 @@ export default function LimitReachedModal({ isOpen, resetTime, onClose }: LimitR
       >
         <h2 
           id="modal-title"
-          className="text-xl sm:text-2xl font-bold mb-6 text-white text-center"
+          className="text-xl sm:text-2xl font-bold mb-4 text-white text-center"
         >
           Daily Scan Limit Reached
         </h2>
-        <div className="space-y-4 sm:space-y-6 text-center">
-          <p className="text-base sm:text-lg text-gray-200">
+        <div className="space-y-3 text-center">
+          <p className="text-base text-gray-200">
             You&apos;ve used all your free scans for today.
           </p>
-          <p className="text-base sm:text-lg text-gray-200">
+          <p className="text-sm text-gray-300">
             Free users are limited to 5 scans per day.
           </p>
-          <a 
-            href="/premium"
-            onClick={(e) => {
-              e.preventDefault();
-              handleUpgradeClick();
-            }}
-            className="text-yellow-400 text-lg font-semibold block hover:text-red-300 hover:underline transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
-          >
-            Upgrade to Premium for Unlimited Scans!
-            <span aria-hidden="true">→</span>
-          </a>
           {resetTime && (
-            <div className="bg-blue-800 rounded-lg p-4">
-              <p className="text-gray-200">
-                Time until reset: 
-                <span className="font-mono font-bold text-white ml-2" aria-live="polite">
-                  {timeLeft}
-                </span>
+            <div className="bg-blue-800 rounded-lg p-4 mt-4">
+              <p className="text-sm text-gray-300 mb-2">Your limit will reset in:</p>
+              <p className="font-mono font-bold text-2xl text-white tracking-wider" aria-live="polite">
+                {timeLeft}
               </p>
             </div>
           )}
+          <div className="pt-4">
+            <a 
+              href="/premium"
+              onClick={(e) => {
+                e.preventDefault();
+                handleUpgradeClick();
+              }}
+              className="text-yellow-400 text-sm font-semibold block hover:text-yellow-300 hover:underline transition-all duration-200 cursor-pointer"
+            >
+              Upgrade To Premium For Unlimited Scans →
+            </a>
+          </div>
         </div>
-        <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-4">
+        <div className="mt-6 space-y-3">
           <Button 
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors duration-200 shadow-lg"
+            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2.5 rounded-lg transition-colors duration-200 shadow-lg"
             onClick={handleUpgradeClick}
           >
             Upgrade to Premium
           </Button>
           <button
-            className="w-full text-gray-300 hover:text-white transition-colors duration-200 py-2"
+            className="w-full text-gray-300 hover:text-white transition-colors duration-200 py-2 text-sm"
             onClick={onClose}
           >
             Close

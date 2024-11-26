@@ -7,13 +7,7 @@ import {
   AuthenticatedRequest,
   asyncHandler
 } from '../utils/errors';
-
-// Rate limit configuration
-const config = {
-  RATE_LIMIT: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '5'),
-  WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW || '43200'), // 12 hours in seconds
-  KEY_PREFIX: 'rate_limit:'
-};
+import { getRateLimitKey, rateLimitConfig } from '../utils/rateLimit';
 
 interface RateLimitInfo {
   limit: number;
@@ -31,80 +25,94 @@ export const rateLimit = asyncHandler(async (
     throw new UnauthorizedError('Authentication required');
   }
 
-  const key = `${config.KEY_PREFIX}${req.userId}`;
+  const key = getRateLimitKey(req.userId);
+  console.log('Rate limit check:', { userId: req.userId, key });
 
-  // Get current count and TTL
-  const [count, ttl] = await Promise.all([
-    redisClient.get(key),
-    redisClient.ttl(key)
-  ]);
+  try {
+    // Use MULTI to make operations atomic
+    const multi = redisClient.multi();
 
-  // Prepare rate limit info
-  const rateLimitInfo: RateLimitInfo = {
-    limit: config.RATE_LIMIT,
-    remaining: config.RATE_LIMIT,
-    resetTime: config.WINDOW
-  };
+    // Get current count and increment in one atomic operation
+    const result = await multi
+      .incr(key)
+      .expire(key, rateLimitConfig.WINDOW)
+      .exec();
 
-  if (!count || ttl < 0) {
-    // First request or expired key
-    await Promise.all([
-      redisClient.set(key, '1'),
-      redisClient.expire(key, config.WINDOW)
-    ]);
+    // Get the new count from the INCR result
+    const newCount = result?.[0]?.[1] as number;
+    console.log('Rate limit counter:', { userId: req.userId, count: newCount });
 
-    rateLimitInfo.remaining = config.RATE_LIMIT - 1;
-  } else {
-    const currentCount = parseInt(count);
-    rateLimitInfo.remaining = Math.max(0, config.RATE_LIMIT - currentCount);
-    rateLimitInfo.resetTime = ttl;
-
-    if (currentCount >= config.RATE_LIMIT) {
+    if (newCount > rateLimitConfig.RATE_LIMIT) {
+      // If over limit, decrement the counter back
+      await redisClient.decr(key);
+      
+      const ttl = await redisClient.ttl(key);
+      console.log('Rate limit exceeded:', { userId: req.userId, count: newCount - 1, ttl });
+      
       throw new RateLimitError('Rate limit exceeded', {
-        limit: config.RATE_LIMIT,
+        limit: rateLimitConfig.RATE_LIMIT,
         remaining: 0,
         resetTime: ttl,
         retryAfter: ttl
       });
     }
 
-    // Increment count
-    await redisClient.incr(key);
+    // Calculate remaining scans
+    const remaining = Math.max(0, rateLimitConfig.RATE_LIMIT - newCount);
+    const ttl = await redisClient.ttl(key);
+
+    // Set rate limit headers
+    res.set({
+      'X-RateLimit-Limit': rateLimitConfig.RATE_LIMIT.toString(),
+      'X-RateLimit-Remaining': remaining.toString(),
+      'X-RateLimit-Reset': Math.floor(Date.now() / 1000 + ttl).toString()
+    });
+
+    console.log('Rate limit updated:', {
+      userId: req.userId,
+      count: newCount,
+      remaining,
+      ttl,
+      headers: {
+        limit: res.get('X-RateLimit-Limit'),
+        remaining: res.get('X-RateLimit-Remaining'),
+        reset: res.get('X-RateLimit-Reset')
+      }
+    });
+
+    next();
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      throw error;
+    }
+    console.error('Rate limit error:', error);
+    throw new CacheError('Rate limiting service unavailable');
   }
-
-  // Set rate limit headers
-  res.set({
-    'X-RateLimit-Limit': config.RATE_LIMIT.toString(),
-    'X-RateLimit-Remaining': rateLimitInfo.remaining.toString(),
-    'X-RateLimit-Reset': Math.floor(Date.now() / 1000 + rateLimitInfo.resetTime).toString()
-  });
-
-  next();
 });
 
 // Helper function to get current rate limit info
 export const getRateLimitInfo = async (userId: number): Promise<RateLimitInfo> => {
   try {
-    const key = `${config.KEY_PREFIX}${userId}`;
+    const key = getRateLimitKey(userId);
+    console.log('Getting rate limit info:', { userId, key });
+    
     const [count, ttl] = await Promise.all([
       redisClient.get(key),
       redisClient.ttl(key)
     ]);
 
-    if (!count || ttl < 0) {
-      return {
-        limit: config.RATE_LIMIT,
-        remaining: config.RATE_LIMIT,
-        resetTime: config.WINDOW
-      };
-    }
+    const currentCount = count ? parseInt(count) : 0;
+    const resetTime = ttl > 0 ? ttl : rateLimitConfig.WINDOW;
+
+    console.log('Rate limit info:', { userId, currentCount, resetTime });
 
     return {
-      limit: config.RATE_LIMIT,
-      remaining: Math.max(0, config.RATE_LIMIT - parseInt(count)),
-      resetTime: ttl
+      limit: rateLimitConfig.RATE_LIMIT,
+      remaining: Math.max(0, rateLimitConfig.RATE_LIMIT - currentCount),
+      resetTime
     };
   } catch (error) {
-    throw new CacheError('Error getting rate limit info', { original: error });
+    console.error('Rate limit info error:', error);
+    throw new CacheError('Rate limiting service unavailable');
   }
 };

@@ -6,8 +6,11 @@ import Button from '../ui/Button';
 import ShareButtons from '../ui/ShareButtons';
 import { useToast } from '../../context/ToastContext';
 import { useRateLimit } from '../../context/RateLimitContext';
+import { useAuth } from '../../context/AuthContext';
 import LimitReachedModal from '../ui/LimitReachedModal';
 import ScanCounter from '../ui/ScanCounter';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function UploadSection() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -18,7 +21,8 @@ export default function UploadSection() {
   const [error, setError] = useState<string>('');
   const [qrType, setQrType] = useState<string>('');
   const { showToast } = useToast();
-  const { scansUsed, remainingScans, resetTime, addScan, canScan } = useRateLimit();
+  const { scansUsed, resetTime, canScan, syncWithBackend } = useRateLimit();
+  const { getToken } = useAuth();
   const [showLimitModal, setShowLimitModal] = useState(false);
 
   // Handle file drop
@@ -74,14 +78,40 @@ export default function UploadSection() {
   // Detect QR code type
   const detectQRType = (data: string): string => {
     if (/^https?:\/\//i.test(data)) return 'URL';
-    if (data.startsWith('WIFI:')) return 'WiFi Network';
-    if (data.startsWith('BEGIN:VCARD')) return 'Contact Card';
-    if (data.startsWith('mailto:')) return 'Email Address';
-    if (data.startsWith('tel:')) return 'Phone Number';
+    if (data.startsWith('WIFI:')) return 'WIFI';
+    if (data.startsWith('BEGIN:VCARD')) return 'VCARD';
+    if (data.startsWith('mailto:')) return 'EMAIL';
+    if (data.startsWith('tel:')) return 'PHONE';
     if (data.startsWith('sms:')) return 'SMS';
-    if (data.startsWith('geo:')) return 'Location';
-    if (data.startsWith('BEGIN:VEVENT')) return 'Calendar Event';
-    return 'Text';
+    if (data.startsWith('geo:')) return 'LOCATION';
+    if (data.startsWith('BEGIN:VEVENT')) return 'CALENDAR';
+    return 'TEXT';
+  };
+
+  // Create scan in backend
+  const createScan = async (content: string, type: string) => {
+    const token = getToken();
+    if (!token) {
+      throw new Error('Create free account to decode QR codes.');
+    }
+
+    const response = await fetch(`${API_URL}/api/scans`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ content, type })
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded');
+      }
+      throw new Error('Failed to create scan');
+    }
+
+    return response.json();
   };
 
   // Decode QR code using ZXing
@@ -105,12 +135,12 @@ export default function UploadSection() {
           try {
             const result = await reader.decodeFromImage(img);
             resolve(result.getText());
-          } catch (error) {
+          } catch {
             reject(new Error('No QR code found in image'));
           } finally {
             reader.reset();
           }
-        } catch (error) {
+        } catch {
           reject(new Error('Failed to process image'));
         }
       };
@@ -133,16 +163,30 @@ export default function UploadSection() {
     setIsLoading(true);
     setError('');
     try {
+      // First decode the QR code
       const data = await decodeQR(file);
-      const success = addScan();
-      if (!success) {
-        setShowLimitModal(true);
-        return;
+      const type = detectQRType(data);
+      
+      // Create scan in backend - this will handle rate limiting
+      try {
+        await createScan(data, type);
+        // If scan was created successfully, update local state
+        await syncWithBackend(); // Sync to get latest count
+        setDecodedData(data);
+        setQrType(type);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to process QR code';
+        setError(errorMessage);
+        if (errorMessage === 'Rate limit exceeded') {
+          setShowLimitModal(true);
+          await syncWithBackend(); // Sync to get latest count
+        }
+        setDecodedData('');
+        setQrType('');
       }
-      setDecodedData(data);
-      setQrType(detectQRType(data));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to process QR code');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process QR code';
+      setError(errorMessage);
       setDecodedData('');
       setQrType('');
     } finally {
@@ -172,7 +216,7 @@ export default function UploadSection() {
       try {
         await navigator.clipboard.writeText(decodedData);
         showToast('Content copied to clipboard!', 'success');
-      } catch (err) {
+      } catch {
         showToast('Failed to copy to clipboard', 'error');
       }
     }
@@ -254,7 +298,7 @@ export default function UploadSection() {
               <p className="text-red-500 text-sm mb-4">{error}</p>
             )}
             <p className="text-sm text-gray-500 italic">
-              *Built with the most used and secure Google's ZXing library.
+              *Built with the most used and secure Google&apos;s ZXing library.
             </p>
           </div>
         </div>

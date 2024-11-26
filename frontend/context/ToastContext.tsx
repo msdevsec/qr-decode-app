@@ -3,11 +3,11 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import Toast from '../components/ui/Toast';
 
-interface ToastContextType {
+export interface ToastContextType {
   showToast: (message: string, type: 'success' | 'error') => void;
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+export const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 interface ToastState {
   message: string;

@@ -16,9 +16,37 @@ dotenv.config();
 export const app = express();
 const port = process.env.PORT || 4000;
 
-// Middleware
-app.use(cors());
+// Configure CORS
+app.use(cors({
+  origin: process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : process.env.FRONTEND_URL,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Body parsing middleware
 app.use(express.json());
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
+  if (req.method === 'POST' || req.method === 'PUT') {
+    console.log('Body:', { ...req.body, password: req.body.password ? '[REDACTED]' : undefined });
+  }
+  
+  // Log response
+  const originalSend = res.send;
+  res.send = function(body) {
+    console.log('Response:', {
+      statusCode: res.statusCode,
+      body: typeof body === 'string' ? JSON.parse(body) : body
+    });
+    return originalSend.call(this, body);
+  };
+  
+  next();
+});
 
 // API Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {

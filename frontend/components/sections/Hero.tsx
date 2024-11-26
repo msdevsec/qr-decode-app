@@ -1,6 +1,7 @@
 // frontend/components/sections/Hero.tsx
 'use client';
 import Button from '../ui/Button';
+import { useRouter } from 'next/navigation';
 
 const scrollToUpload = () => {
   const element = document.getElementById('upload-section');
@@ -15,16 +16,19 @@ const scrollToUpload = () => {
 };
 
 export default function Hero() {
+  const router = useRouter();
+
   return (
     <div className="text-center px-4 sm:px-6 lg:px-8 mb-12">
       <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-white">
         QR Code Scanner Online
       </h1>
-      <p className="text-base sm:text-lg text-gray-400 mb-8 max-w-2xl mx-auto">
+      <p className="text-base sm:text-lg text-gray-400 mb-4 max-w-2xl mx-auto">
         The Free QR Code Scanner online allows you to scan QR codes without any app. 
         It helps you scan QR from images and also webcam. You can use it online 
         on mobile and desktop also.
       </p>
+
 
       {/* Problem-Solution Section */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 sm:p-6 mb-8 max-w-3xl mx-auto">
@@ -61,12 +65,18 @@ export default function Hero() {
       </div>
 
       {/* Action Button */}
-      <div className="flex justify-center mb-12">
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-12">
         <Button 
           onClick={scrollToUpload}
           className="w-full sm:w-auto px-8 py-3 text-lg"
         >
           Scan Now
+        </Button>
+        <Button 
+          onClick={() => router.push('/premium')}
+          className="w-full sm:w-auto px-8 py-3 text-lg bg-yellow-600 hover:bg-yellow-700"
+        >
+          Get Unlimited Scans
         </Button>
       </div>
     </div>

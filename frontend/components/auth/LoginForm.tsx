@@ -6,6 +6,10 @@ import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
 
+interface ApiError extends Error {
+  message: string;
+}
+
 export default function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
@@ -15,16 +19,47 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const validateForm = () => {
+    if (!email) {
+      setError('Email is required');
+      return false;
+    }
+    if (!password) {
+      setError('Password is required');
+      return false;
+    }
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       await login(email, password);
       router.push('/dashboard');
     } catch (err) {
-      setError('Failed to login. Please try again.');
+      const error = err as ApiError;
+      // Handle specific error messages from the backend
+      if (error.message === 'Invalid credentials') {
+        setError('Invalid email or password');
+      } else if (error.message.includes('not found')) {
+        setError('Account not found. Please check your email');
+      } else {
+        setError(error.message || 'Failed to login. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +87,10 @@ export default function LoginForm() {
             autoComplete="email"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setError(''); // Clear error when user types
+            }}
             className="
               appearance-none block w-full
               px-3 py-2
@@ -62,8 +100,10 @@ export default function LoginForm() {
               placeholder-gray-500
               focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
               transition-colors duration-200
+              disabled:opacity-50
             "
             placeholder="you@example.com"
+            disabled={isLoading}
             aria-describedby={error ? "email-error" : undefined}
           />
         </div>
@@ -85,7 +125,10 @@ export default function LoginForm() {
             autoComplete="current-password"
             required
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError(''); // Clear error when user types
+            }}
             className="
               appearance-none block w-full
               px-3 py-2
@@ -95,8 +138,10 @@ export default function LoginForm() {
               placeholder-gray-500
               focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
               transition-colors duration-200
+              disabled:opacity-50
             "
             placeholder="••••••••"
+            disabled={isLoading}
             aria-describedby={error ? "password-error" : undefined}
           />
         </div>
