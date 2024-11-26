@@ -1,4 +1,4 @@
-# QRDecode.AI 🔍
+# QRdecode.AI 🔍
 
 A modern, open-source QR code scanning and management application built with Next.js, Express, and TypeScript. Perfect for developers who want to learn full-stack development or need a starting point for their own QR code projects.
 
