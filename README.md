@@ -3,15 +3,17 @@
 A modern, open-source QR code scanning and management application built with Next.js, Express, and TypeScript. Perfect for developers who want to learn full-stack development or need a starting point for their own QR code projects.
 
 <div align="center">
-  <img src="frontend/public/images/decoded.png" alt="QR Code Scanning Demo" width="800"/>
-  <p><em>QR Code scanning in action - showing successful scans and decoded content</em></p>
+  <img src="frontend/public/images/decoded" alt="QR Code Scanning Demo" width="800"/>
 </div>
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
-![TypeScript](https://img.shields.io/badge/typescript-%5E5.0.0-blue.svg)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](docker-compose.yml)
+[![TypeScript](https://img.shields.io/badge/typescript-%5E5.0.0-blue.svg)](tsconfig.json)
 
-[Rest of the README content remains the same...]
+## ✨ Features
+
+### Core Features
+- 📱 Scan QR codes using your device camera
 - 📤 Upload QR code images for scanning
 - 📊 View scan history and statistics
 - 🔒 User authentication and authorization
@@ -31,21 +33,21 @@ A modern, open-source QR code scanning and management application built with Nex
 The easiest way to get started is using Docker. Make sure you have [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed.
 
 ### 1. Clone the Repository
-\`\`\`bash
-git clone https://github.com/yourusername/qrdecode.ai.git
+```bash
+git clone https://github.com/msdevsec/qrdecode.ai.git
 cd qrdecode.ai
-\`\`\`
+```
 
 ### 2. Set Up Environment Variables
-\`\`\`bash
+```bash
 # Copy environment files
 cp .env.example .env
 cp frontend/.env.example frontend/.env.local
 cp backend/.env.example backend/.env
-\`\`\`
+```
 
 ### 3. Start the Application
-\`\`\`bash
+```bash
 # Build and start all services
 docker-compose up -d
 
@@ -53,13 +55,13 @@ docker-compose up -d
 # - Frontend: http://localhost:3000
 # - Backend API: http://localhost:4000
 # - API Documentation: http://localhost:4000/api-docs
-\`\`\`
+```
 
 That's it! The application should now be running. 🎉
 
 ### Docker Commands Quick Reference
 
-\`\`\`bash
+```bash
 # Start all services
 docker-compose up -d
 
@@ -74,7 +76,7 @@ docker-compose up -d --build
 
 # Remove all containers and volumes
 docker-compose down -v
-\`\`\`
+```
 
 ## 🛠️ Manual Setup (Without Docker)
 
@@ -86,23 +88,23 @@ If you prefer to run the services directly on your machine:
 - Redis 7+
 
 ### Backend Setup
-\`\`\`bash
+```bash
 cd backend
 npm install
 npm run prisma:migrate
 npm run dev
-\`\`\`
+```
 
 ### Frontend Setup
-\`\`\`bash
+```bash
 cd frontend
 npm install
 npm run dev
-\`\`\`
+```
 
 ## 📁 Project Structure
 
-\`\`\`
+```
 .
 ├── frontend/                 # Next.js frontend application
 │   ├── app/                 # App router pages
@@ -119,29 +121,29 @@ npm run dev
 │   └── prisma/             # Database schema and migrations
 │
 └── docker/                 # Docker configuration files
-\`\`\`
+```
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
 #### Backend (.env)
-- \`PORT\`: API server port (default: 4000)
-- \`DATABASE_URL\`: PostgreSQL connection string
-- \`REDIS_URL\`: Redis connection string
-- \`JWT_SECRET\`: Secret for JWT tokens
-- \`RATE_LIMIT_MAX_REQUESTS\`: Max requests per window (default: 5)
+- `PORT`: API server port (default: 4000)
+- `DATABASE_URL`: PostgreSQL connection string
+- `REDIS_URL`: Redis connection string
+- `JWT_SECRET`: Secret for JWT tokens
+- `RATE_LIMIT_MAX_REQUESTS`: Max requests per window (default: 5)
 
 #### Frontend (.env.local)
-- \`NEXT_PUBLIC_API_URL\`: Backend API URL
-- \`NEXT_PUBLIC_APP_NAME\`: Application name
-- \`NEXT_PUBLIC_FREE_TIER_LIMIT\`: Free tier scan limit
+- `NEXT_PUBLIC_API_URL`: Backend API URL
+- `NEXT_PUBLIC_APP_NAME`: Application name
+- `NEXT_PUBLIC_FREE_TIER_LIMIT`: Free tier scan limit
 
 ## 🧪 Testing
 
-We use Jest for testing. All tests are in the \`__test__\` directories.
+We use Jest for testing. All tests are in the `__test__` directories.
 
-\`\`\`bash
+```bash
 # Run backend tests
 cd backend
 npm test
@@ -149,11 +151,11 @@ npm test
 # Run frontend tests
 cd frontend
 npm test
-\`\`\`
+```
 
 ## 📚 API Documentation
 
-API documentation is available at \`http://localhost:4000/api-docs\` when running the development server. It includes:
+API documentation is available at `http://localhost:4000/api-docs` when running the development server. It includes:
 - All available endpoints
 - Request/response schemas
 - Authentication requirements
@@ -171,9 +173,9 @@ API documentation is available at \`http://localhost:4000/api-docs\` when runnin
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (\`git checkout -b feature/AmazingFeature\`)
-3. Commit your changes (\`git commit -m 'Add some AmazingFeature'\`)
-4. Push to the branch (\`git push origin feature/AmazingFeature\`)
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
 ## 📝 License
@@ -232,4 +234,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Fork it if you want to contribute
 
 ---
-Built with ❤️ by the QRDecode.AI team
+Built with ❤️ by [msdevsec](https://github.com/msdevsec)
